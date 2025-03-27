@@ -1,36 +1,19 @@
 # Library
-add_library(new_cpp_project
-  project.h
-  project.cc
+add_executable(triangle_sandbox
+  context.cc
+  context.h
+  main.cc
+  renderer.cc
+  renderer.h
+  sdl_types.h
 )
 
-# Configure Fixtures Location
-get_filename_component(TEST_ASSETS_LOCATION ../assets ABSOLUTE)
-configure_file(fixtures_location.h.in fixtures_location.h @ONLY)
+target_include_directories(triangle_sandbox PUBLIC ../third_party/hedley)
 
-# Unittests
-add_executable(new_cpp_project_tests
-  unittests.cc
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/triangle.slang.metal
+  DEPENDS shaders/triangle.slang
+  COMMAND slangc -g -target metal triangle.slang
 )
-target_link_libraries(new_cpp_project_tests
-  new_cpp_project
-  gtest_main
-)
-target_include_directories(new_cpp_project_tests
-  PUBLIC
-    ${CMAKE_CURRENT_BINARY_DIR}
-)
-gtest_discover_tests(new_cpp_project_tests)
 
-# Benchmarks
-add_executable(new_cpp_project_benchmarks
-  benchmarks.cc
-)
-target_link_libraries(new_cpp_project_benchmarks
-  new_cpp_project
-  benchmark::benchmark
-)
-target_include_directories(new_cpp_project_benchmarks
-  PUBLIC
-    ${CMAKE_CURRENT_BINARY_DIR}
-)
+target_link_libraries(triangle_sandbox PUBLIC SDL3-static jfml)

@@ -3,11 +3,14 @@
 
 .PHONY: clean build
 
+main: build
+	./build/src/triangle_sandbox
+
 test: build
 	ctest --test-dir build
 
 bench: build
-	./build/src/new_cpp_project_benchmarks
+	./build/src/triangle_sandbox_benchmarks
 
 build: build/build.ninja
 	cmake --build build

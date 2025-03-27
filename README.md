@@ -1,3 +1,15 @@
-# A New C++ Project
+# Triangle Sandbox
 
-This is a project template Chinmay uses for his C++ projects.
+Tinkering around with SDL3 GPU and Slang.
+
+## Prerequisites
+* Git
+* Ninja
+* Make
+* CMake
+* CCache: Optional but will help a lot. Especially since you are also compiling the slangc toolchain.
+
+## Building
+
+* `make sync` to update Git submodules.
+* `make` to build and run the project.
