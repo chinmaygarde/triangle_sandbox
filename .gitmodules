@@ -13,9 +13,6 @@
 [submodule "third_party/jfml"]
 	path = third_party/jfml
 	url = https://github.com/chinmaygarde/jfml
-[submodule "third_party/slang"]
-	path = third_party/slang
-	url = https://github.com/shader-slang/slang
 [submodule "third_party/hedley"]
 	path = third_party/hedley
 	url = https://github.com/nemequ/hedley.git

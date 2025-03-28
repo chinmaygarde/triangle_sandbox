@@ -1,10 +1,12 @@
 #include "renderer.h"
+#include "triangle.h"
 
 namespace ts {
 
 Renderer::Renderer(std::shared_ptr<Context> context)
     : context_(std::move(context)) {
   FML_CHECK(context_);
+  Triangle triangle(context_->GetDevice());
 }
 
 bool Renderer::Render() {
