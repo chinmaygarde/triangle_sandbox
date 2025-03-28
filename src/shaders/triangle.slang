@@ -9,7 +9,7 @@ struct FragmentIn {
 };
 
 struct VertexOut {
-  FragmentIn fragment_in: FragmentIn;
+  FragmentIn fragment_in: USER_FRAGMENT;
   float4 position: SV_Position;
 };
 
@@ -26,7 +26,7 @@ VertexOut VertexMain(VertexIn vtx) {
 }
 
 [shader("fragment")]
-FragmentOut FragmentMain(FragmentIn frag : FragmentIn) : SV_Target {
+FragmentOut FragmentMain(FragmentIn frag: USER_FRAGMENT) : SV_Target {
   FragmentOut result;
   result.color = frag.color;
   return result;
