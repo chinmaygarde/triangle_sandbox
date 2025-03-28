@@ -2,6 +2,8 @@
 
 namespace ts {
 
+GraphicsPipelineBuilder::GraphicsPipelineBuilder() {}
+
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetPrimitiveType(
     SDL_GPUPrimitiveType type) {
   primitive_type_ = type;

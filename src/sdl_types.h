@@ -62,6 +62,17 @@ inline void FreeSDLTypeWithDevice(const GPUDevicePair<SDL_GPUShader>& value) {
   SDL_ReleaseGPUShader(value.device, value.value);
 }
 
+template <>
+inline void FreeSDLTypeWithDevice(
+    const GPUDevicePair<SDL_GPUTransferBuffer>& value) {
+  SDL_ReleaseGPUTransferBuffer(value.device, value.value);
+}
+
+template <>
+inline void FreeSDLTypeWithDevice(const GPUDevicePair<SDL_GPUBuffer>& value) {
+  SDL_ReleaseGPUBuffer(value.device, value.value);
+}
+
 template <class T>
 using UniqueGPUObject = fml::UniqueObject<T*, UniqueSDLTypeTraits<T>>;
 
@@ -74,5 +85,8 @@ using UniqueGPUDevice = UniqueGPUObject<SDL_GPUDevice>;
 using UniqueGPUShader = UniqueGPUObjectWithDevice<SDL_GPUShader>;
 using UniqueGPUGraphicsPipeline =
     UniqueGPUObjectWithDevice<SDL_GPUGraphicsPipeline>;
+using UniqueGPUTransferBuffer =
+    UniqueGPUObjectWithDevice<SDL_GPUTransferBuffer>;
+using UniqueGPUBuffer = UniqueGPUObjectWithDevice<SDL_GPUBuffer>;
 
 }  // namespace ts

@@ -1,12 +1,13 @@
 #include "renderer.h"
+
+#include <fml/closure.h>
 #include "triangle.h"
 
 namespace ts {
 
 Renderer::Renderer(std::shared_ptr<Context> context)
     : context_(std::move(context)) {
-  FML_CHECK(context_);
-  Triangle triangle(context_->GetDevice());
+  drawables_.emplace_back(std::make_unique<Triangle>(context_->GetDevice()));
 }
 
 bool Renderer::Render() {
@@ -16,6 +17,8 @@ bool Renderer::Render() {
     FML_LOG(ERROR) << "Could not get command buffer: " << SDL_GetError();
     return false;
   }
+  fml::ScopedCleanupClosure submit_command_buffer(
+      [command_buffer]() { SDL_SubmitGPUCommandBuffer(command_buffer); });
   SDL_GPUTexture* texture = nullptr;
   Uint32 texture_width = 0u;
   Uint32 texture_height = 0u;
@@ -44,8 +47,14 @@ bool Renderer::Render() {
     FML_LOG(ERROR) << "Could not begin render pass: " << SDL_GetError();
     return false;
   }
-  SDL_EndGPURenderPass(render_pass);
-  SDL_SubmitGPUCommandBuffer(command_buffer);
+  fml::ScopedCleanupClosure end_render_pass(
+      [render_pass]() { SDL_EndGPURenderPass(render_pass); });
+
+  for (auto& drawable : drawables_) {
+    if (!drawable->Draw(render_pass)) {
+      return false;
+    }
+  }
   return true;
 }
 

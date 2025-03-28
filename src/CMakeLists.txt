@@ -1,10 +1,14 @@
 # Library
 add_executable(triangle_sandbox
+  buffer.cc
+  buffer.h
   context.cc
   context.h
+  drawable.cc
+  drawable.h
   main.cc
   pipeline.cc
-  pipeline.cc
+  pipeline.h
   renderer.cc
   renderer.h
   sdl_types.h

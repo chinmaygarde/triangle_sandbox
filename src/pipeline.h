@@ -7,7 +7,7 @@ namespace ts {
 
 class GraphicsPipelineBuilder {
  public:
-  GraphicsPipelineBuilder() {}
+  GraphicsPipelineBuilder();
 
   GraphicsPipelineBuilder& SetPrimitiveType(SDL_GPUPrimitiveType type);
 
