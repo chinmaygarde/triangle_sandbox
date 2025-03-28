@@ -30,10 +30,10 @@ UniqueGPUShader ShaderBuilder::Build(const UniqueGPUDevice& device) const {
   if (!entrypoint_.empty()) {
     info.entrypoint = entrypoint_.data();
   }
-  GPUDeviceShader shader;
+  GPUDevicePair<SDL_GPUShader> shader;
   shader.device = device.get();
-  shader.shader = SDL_CreateGPUShader(device.get(), &info);
-  if (!shader.shader) {
+  shader.value = SDL_CreateGPUShader(device.get(), &info);
+  if (!shader.value) {
     FML_LOG(ERROR) << "Could not create shader: " << SDL_GetError();
     return {};
   }

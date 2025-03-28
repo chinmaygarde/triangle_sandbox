@@ -42,10 +42,10 @@ UniqueGPUGraphicsPipeline GraphicsPipelineBuilder::Build(
     const UniqueGPUDevice& device) const {
   SDL_GPUGraphicsPipelineCreateInfo info = {};
   if (vertex_shader_) {
-    info.vertex_shader = vertex_shader_->get().shader;
+    info.vertex_shader = vertex_shader_->get().value;
   }
   if (fragment_shader_) {
-    info.fragment_shader = fragment_shader_->get().shader;
+    info.fragment_shader = fragment_shader_->get().value;
   }
   info.primitive_type = primitive_type_;
   info.vertex_input_state.num_vertex_buffers = vertex_buffers_.size();
@@ -59,9 +59,10 @@ UniqueGPUGraphicsPipeline GraphicsPipelineBuilder::Build(
     FML_LOG(ERROR) << "Could not create graphics pipeline: " << SDL_GetError();
     return {};
   }
-  GPUDeviceGraphicsPipeline res = {};
+
+  GPUDevicePair<SDL_GPUGraphicsPipeline> res = {};
   res.device = device.get();
-  res.pipeline = pipeline;
+  res.value = pipeline;
   return UniqueGPUGraphicsPipeline{res};
 }
 

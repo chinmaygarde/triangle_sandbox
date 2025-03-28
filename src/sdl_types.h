@@ -6,7 +6,18 @@
 namespace ts {
 
 template <class T>
+struct GPUDevicePair {
+  SDL_GPUDevice* device = nullptr;
+  T* value = nullptr;
+
+  constexpr auto operator<=>(const GPUDevicePair<T>&) const = default;
+};
+
+template <class T>
 void FreeSDLType(T* value);
+
+template <class T>
+void FreeSDLTypeWithDevice(const GPUDevicePair<T>& value);
 
 template <class T>
 struct UniqueSDLTypeTraits {
@@ -15,6 +26,19 @@ struct UniqueSDLTypeTraits {
   static bool IsValid(const T* value) { return value != InvalidValue(); }
 
   static void Free(T* value) { FreeSDLType<T>(value); }
+};
+
+template <class T>
+struct UniqueSDLTypeTraitsWithDevice {
+  static GPUDevicePair<T> InvalidValue() { return {}; }
+
+  static bool IsValid(const GPUDevicePair<T>& value) {
+    return value != InvalidValue();
+  }
+
+  static void Free(const GPUDevicePair<T>& value) {
+    FreeSDLTypeWithDevice(value);
+  }
 };
 
 template <>
@@ -27,52 +51,28 @@ inline void FreeSDLType(SDL_Window* window) {
   SDL_DestroyWindow(window);
 }
 
-struct GPUDeviceShader {
-  SDL_GPUDevice* device = nullptr;
-  SDL_GPUShader* shader = nullptr;
+template <>
+inline void FreeSDLTypeWithDevice(
+    const GPUDevicePair<SDL_GPUGraphicsPipeline>& value) {
+  SDL_ReleaseGPUGraphicsPipeline(value.device, value.value);
+}
 
-  constexpr auto operator<=>(const GPUDeviceShader&) const = default;
-};
+template <>
+inline void FreeSDLTypeWithDevice(const GPUDevicePair<SDL_GPUShader>& value) {
+  SDL_ReleaseGPUShader(value.device, value.value);
+}
 
-struct GPUDeviceShaderTraits {
-  static GPUDeviceShader InvalidValue() { return {}; }
+template <class T>
+using UniqueGPUObject = fml::UniqueObject<T*, UniqueSDLTypeTraits<T>>;
 
-  static bool IsValid(const GPUDeviceShader& value) {
-    return value != InvalidValue();
-  }
+template <class T>
+using UniqueGPUObjectWithDevice =
+    fml::UniqueObject<GPUDevicePair<T>, UniqueSDLTypeTraitsWithDevice<T>>;
 
-  static void Free(const GPUDeviceShader& value) {
-    SDL_ReleaseGPUShader(value.device, value.shader);
-  }
-};
-
-struct GPUDeviceGraphicsPipeline {
-  SDL_GPUDevice* device = nullptr;
-  SDL_GPUGraphicsPipeline* pipeline = nullptr;
-
-  constexpr auto operator<=>(const GPUDeviceGraphicsPipeline&) const = default;
-};
-
-struct GPUDeviceGraphicsPipelineTraits {
-  static GPUDeviceGraphicsPipeline InvalidValue() { return {}; }
-
-  static bool IsValid(const GPUDeviceGraphicsPipeline& value) {
-    return value != InvalidValue();
-  }
-
-  static void Free(const GPUDeviceGraphicsPipeline& value) {
-    SDL_ReleaseGPUGraphicsPipeline(value.device, value.pipeline);
-  }
-};
-
-using UniqueGPUDevice =
-    fml::UniqueObject<SDL_GPUDevice*, UniqueSDLTypeTraits<SDL_GPUDevice>>;
-using UniqueSDLWindow =
-    fml::UniqueObject<SDL_Window*, UniqueSDLTypeTraits<SDL_Window>>;
-using UniqueGPUShader =
-    fml::UniqueObject<GPUDeviceShader, GPUDeviceShaderTraits>;
+using UniqueSDLWindow = UniqueGPUObject<SDL_Window>;
+using UniqueGPUDevice = UniqueGPUObject<SDL_GPUDevice>;
+using UniqueGPUShader = UniqueGPUObjectWithDevice<SDL_GPUShader>;
 using UniqueGPUGraphicsPipeline =
-    fml::UniqueObject<GPUDeviceGraphicsPipeline,
-                      GPUDeviceGraphicsPipelineTraits>;
+    UniqueGPUObjectWithDevice<SDL_GPUGraphicsPipeline>;
 
 }  // namespace ts
