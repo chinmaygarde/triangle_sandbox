@@ -18,13 +18,13 @@ class Triangle {
                                      xxd_triangle_library_length);
 
     auto vs = ShaderBuilder{}
-                  .SetStage(ShaderStage::kVertex)
-                  .SetCode(&code, ShaderFormat::kMSL)
+                  .SetStage(SDL_GPU_SHADERSTAGE_VERTEX)
+                  .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                   .SetEntrypoint("VertexMain")
                   .Build(device);
     auto fs = ShaderBuilder{}
-                  .SetStage(ShaderStage::kFragment)
-                  .SetCode(&code, ShaderFormat::kMSL)
+                  .SetStage(SDL_GPU_SHADERSTAGE_FRAGMENT)
+                  .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                   .SetEntrypoint("FragmentMain")
                   .Build(device);
     struct Vertex {
@@ -35,7 +35,7 @@ class Triangle {
         GraphicsPipelineBuilder{}
             .SetVertexShader(&vs)
             .SetFragmentShader(&fs)
-            .SetPrimitiveType(PrimitiveType::kTriangleList)
+            .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLELIST)
             .SetVertexAttribs({SDL_GPUVertexAttribute{
                                    // Position
                                    .location = 0,

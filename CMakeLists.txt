@@ -20,10 +20,12 @@ enable_testing()
 include(GoogleTest)
 include(CTest)
 
+
 # Setup Slang
+set(SLANG_VERSION 2025.6.3)
 FetchContent_Declare(
   slang_sdk
-  URL https://github.com/shader-slang/slang/releases/download/v2025.6.3/slang-2025.6.3-macos-aarch64.zip
+  URL https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-macos-aarch64.zip
 )
 FetchContent_MakeAvailable(slang_sdk)
 
