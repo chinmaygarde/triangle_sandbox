@@ -31,7 +31,7 @@ class Triangle {
       glm::vec4 position;
       glm::vec4 color;
     };
-    auto pipe =
+    auto pipeline =
         GraphicsPipelineBuilder{}
             .SetVertexShader(&vs)
             .SetFragmentShader(&fs)
@@ -55,11 +55,19 @@ class Triangle {
                 .pitch = sizeof(Vertex),
                 .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
             }})
+            .SetColorTargets({SDL_GPUColorTargetDescription{
+                .format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
+                .blend_state = {},
+            }})
             .Build(device);
+    if (!pipeline.is_valid()) {
+      return;
+    }
+    pipeline_ = std::move(pipeline);
   }
 
  private:
-  UniqueGPUShader shader_;
+  UniqueGPUGraphicsPipeline pipeline_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Triangle);
 };

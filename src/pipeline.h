@@ -45,6 +45,8 @@ class GraphicsPipelineBuilder {
     info.vertex_input_state.vertex_buffer_descriptions = vertex_buffers_.data();
     info.vertex_input_state.num_vertex_attributes = vertex_attribs_.size();
     info.vertex_input_state.vertex_attributes = vertex_attribs_.data();
+    info.target_info.color_target_descriptions = color_targets_.data();
+    info.target_info.num_color_targets = color_targets_.size();
     auto pipeline = SDL_CreateGPUGraphicsPipeline(device.get(), &info);
     if (!pipeline) {
       FML_LOG(ERROR) << "Could not create graphics pipeline: "
@@ -69,12 +71,19 @@ class GraphicsPipelineBuilder {
     return *this;
   }
 
+  GraphicsPipelineBuilder& SetColorTargets(
+      std::vector<SDL_GPUColorTargetDescription> color_targets) {
+    color_targets_ = std::move(color_targets);
+    return *this;
+  }
+
  private:
   UniqueGPUShader* vertex_shader_ = nullptr;
   UniqueGPUShader* fragment_shader_ = nullptr;
   PrimitiveType primitive_type_ = PrimitiveType::kTriangleList;
   std::vector<SDL_GPUVertexBufferDescription> vertex_buffers_;
   std::vector<SDL_GPUVertexAttribute> vertex_attribs_;
+  std::vector<SDL_GPUColorTargetDescription> color_targets_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphicsPipelineBuilder);
 };
