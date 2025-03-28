@@ -51,4 +51,5 @@ target_link_libraries(triangle_sandbox
   PUBLIC
     SDL3-static
     jfml
+    glm
 )

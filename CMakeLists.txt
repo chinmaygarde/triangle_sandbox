@@ -38,6 +38,7 @@ set(SDL_STATIC ON)
 set(SDL_SHARED OFF)
 add_subdirectory(third_party/sdl EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/jfml EXCLUDE_FROM_ALL)
+add_subdirectory(third_party/glm EXCLUDE_FROM_ALL)
 
 # Project
 add_subdirectory(src)
