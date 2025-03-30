@@ -4,24 +4,58 @@
 
 namespace ts {
 
-static UniqueGPUBuffer PerformHostToDeviceTransfer(
-    const UniqueGPUTransferBuffer& xfer_buffer,
-    Uint32 size,
-    SDL_GPUBufferUsageFlags usage) {
+UniqueGPUTexture CreateGPUTexture(SDL_GPUDevice* device,
+                                  glm::ivec3 dims,
+                                  SDL_GPUTextureType type,
+                                  SDL_GPUTextureFormat format,
+                                  SDL_GPUTextureUsageFlags usage,
+                                  Uint32 mip_levels,
+                                  SDL_GPUSampleCount sample_count) {
+  SDL_GPUTextureCreateInfo info = {};
+  info.type = type;
+  info.format = format;
+  info.usage = usage;
+  info.width = dims.x;
+  info.height = dims.y;
+  info.layer_count_or_depth = dims.z;
+  info.num_levels = mip_levels, info.sample_count = sample_count;
+  auto texture = SDL_CreateGPUTexture(device, &info);
+  if (!texture) {
+    FML_LOG(ERROR) << "Could not create texture: " << SDL_GetError();
+    return {};
+  }
+  UniqueGPUTexture::element_type res = {};
+  res.device = device;
+  res.value = texture;
+  return UniqueGPUTexture{res};
+}
+
+UniqueGPUBuffer CreateGPUBuffer(SDL_GPUDevice* device,
+                                Uint32 size,
+                                SDL_GPUBufferUsageFlags usage) {
   SDL_GPUBufferCreateInfo info = {};
   info.size = size;
   info.usage = usage;
 
   UniqueGPUBuffer::element_type element;
-  element.device = xfer_buffer.get().device;
+  element.device = device;
   element.value = SDL_CreateGPUBuffer(element.device, &info);
 
   if (!element.value) {
     FML_LOG(ERROR) << "Could not create graphics buffer: " << SDL_GetError();
     return {};
   }
+  return UniqueGPUBuffer{element};
+}
 
-  UniqueGPUBuffer buffer(element);
+static UniqueGPUBuffer PerformHostToDeviceTransfer(
+    const UniqueGPUTransferBuffer& xfer_buffer,
+    Uint32 size,
+    SDL_GPUBufferUsageFlags usage) {
+  auto buffer = CreateGPUBuffer(xfer_buffer.get().device, size, usage);
+  if (!buffer.is_valid()) {
+    return {};
+  }
 
   auto command_buffer = SDL_AcquireGPUCommandBuffer(buffer.get().device);
   if (!command_buffer) {

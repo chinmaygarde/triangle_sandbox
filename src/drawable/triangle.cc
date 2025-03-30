@@ -54,6 +54,7 @@ Triangle::Triangle(const UniqueGPUDevice& device) {
               .format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
               .blend_state = {},
           }})
+          .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP)
           .Build(device);
   if (!pipeline.is_valid()) {
     return;

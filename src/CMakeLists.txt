@@ -14,12 +14,16 @@ add_executable(triangle_sandbox
   sdl_types.h
   shader.cc
   shader.h
-  triangle.cc
-  triangle.h
+  macros.h
+  drawable/triangle.cc
+  drawable/compute.cc
+  drawable/triangle.h
+  drawable/compute.h
 )
 
 target_include_directories(triangle_sandbox
   PUBLIC
+    .
     ../third_party/hedley
     ${CMAKE_CURRENT_BINARY_DIR}
 )
