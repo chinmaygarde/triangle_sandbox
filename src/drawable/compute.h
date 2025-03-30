@@ -31,6 +31,7 @@ class Compute final : public Drawable {
                   .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                   .SetEntrypoint("SamplingFragmentMain")
                   .SetStage(SDL_GPU_SHADERSTAGE_FRAGMENT)
+                  .SetResourceCounts(1, 0, 0, 0)
                   .Build(device);
 
     return GraphicsPipelineBuilder{}
@@ -114,6 +115,19 @@ class Compute final : public Drawable {
       return;
     }
 
+    render_sampler_ = CreateSampler(
+        device.get(),
+        SDL_GPUSamplerCreateInfo{
+            .address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+            .address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+            .address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+            .min_filter = SDL_GPU_FILTER_LINEAR,
+            .mag_filter = SDL_GPU_FILTER_LINEAR,
+        });
+    if (!render_sampler_.is_valid()) {
+      return;
+    }
+
     glm::ivec2 dims = {800, 600};
     texture_ = CreateGPUTexture(device.get(), {dims, 1}, SDL_GPU_TEXTURETYPE_2D,
                                 SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
@@ -151,10 +165,15 @@ class Compute final : public Drawable {
     }
 
     SDL_BindGPUGraphicsPipeline(pass, render_pipeline_.get().value);
-    SDL_GPUBufferBinding binding = {
+    SDL_GPUBufferBinding vtx_binding = {
         .buffer = render_vtx_buffer_.get().value,
     };
-    SDL_BindGPUVertexBuffers(pass, 0, &binding, 1u);
+    SDL_BindGPUVertexBuffers(pass, 0, &vtx_binding, 1u);
+    SDL_GPUTextureSamplerBinding frag_sampler_bindings = {
+        .sampler = render_sampler_.get().value,
+        .texture = texture_.get().value,
+    };
+    SDL_BindGPUFragmentSamplers(pass, 0, &frag_sampler_bindings, 1u);
     SDL_DrawGPUPrimitives(pass, 4, 1, 0, 0);
 
     return true;
@@ -165,6 +184,7 @@ class Compute final : public Drawable {
   UniqueGPUGraphicsPipeline render_pipeline_;
   UniqueGPUTexture texture_;
   UniqueGPUBuffer render_vtx_buffer_;
+  UniqueGPUSampler render_sampler_;
   bool is_valid_ = false;
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Compute);
 };

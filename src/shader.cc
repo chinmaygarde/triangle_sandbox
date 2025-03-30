@@ -27,6 +27,10 @@ UniqueGPUShader ShaderBuilder::Build(const UniqueGPUDevice& device) const {
   }
   info.format = format_;
   info.stage = stage_;
+  info.num_samplers = num_samplers_;
+  info.num_storage_textures = num_storage_textures_;
+  info.num_storage_buffers = num_storage_buffers_;
+  info.num_uniform_buffers = num_uniform_buffers_;
   if (!entrypoint_.empty()) {
     info.entrypoint = entrypoint_.data();
   }
@@ -38,6 +42,17 @@ UniqueGPUShader ShaderBuilder::Build(const UniqueGPUDevice& device) const {
     return {};
   }
   return UniqueGPUShader{shader};
+}
+
+ShaderBuilder& ShaderBuilder::SetResourceCounts(Uint32 num_samplers,
+                                                Uint32 num_storage_textures,
+                                                Uint32 num_storage_buffers,
+                                                Uint32 num_uniform_buffers) {
+  num_samplers_ = num_samplers;
+  num_storage_textures_ = num_storage_textures;
+  num_storage_buffers_ = num_storage_buffers;
+  num_uniform_buffers_ = num_uniform_buffers;
+  return *this;
 }
 
 }  // namespace ts

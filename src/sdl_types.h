@@ -84,6 +84,11 @@ inline void FreeSDLTypeWithDevice(const GPUDevicePair<SDL_GPUTexture>& value) {
   SDL_ReleaseGPUTexture(value.device, value.value);
 }
 
+template <>
+inline void FreeSDLTypeWithDevice(const GPUDevicePair<SDL_GPUSampler>& value) {
+  SDL_ReleaseGPUSampler(value.device, value.value);
+}
+
 template <class T>
 using UniqueGPUObject = fml::UniqueObject<T*, UniqueSDLTypeTraits<T>>;
 
@@ -102,5 +107,9 @@ using UniqueGPUTransferBuffer =
     UniqueGPUObjectWithDevice<SDL_GPUTransferBuffer>;
 using UniqueGPUBuffer = UniqueGPUObjectWithDevice<SDL_GPUBuffer>;
 using UniqueGPUTexture = UniqueGPUObjectWithDevice<SDL_GPUTexture>;
+using UniqueGPUSampler = UniqueGPUObjectWithDevice<SDL_GPUSampler>;
+
+UniqueGPUSampler CreateSampler(SDL_GPUDevice* device,
+                               SDL_GPUSamplerCreateInfo info);
 
 }  // namespace ts

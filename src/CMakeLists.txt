@@ -12,6 +12,7 @@ add_executable(triangle_sandbox
   renderer.cc
   renderer.h
   sdl_types.h
+  sdl_types.cc
   shader.cc
   shader.h
   macros.h
