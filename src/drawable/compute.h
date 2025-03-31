@@ -3,11 +3,12 @@
 #include <fml/closure.h>
 #include <fml/mapping.h>
 #include "buffer.h"
+#include "compute.slang.h"
 #include "drawable.h"
 #include "macros.h"
 #include "pipeline.h"
+#include "sampling.slang.h"
 #include "shader.h"
-#include "triangle_library.h"
 
 namespace ts {
 
@@ -19,8 +20,7 @@ class Compute final : public Drawable {
   };
   static UniqueGPUGraphicsPipeline CreateRenderPipeline(
       const UniqueGPUDevice& device) {
-    auto code = fml::NonOwnedMapping{xxd_triangle_library_data,
-                                     xxd_triangle_library_length};
+    auto code = fml::NonOwnedMapping{xxd_sampling_data, xxd_sampling_length};
     auto vs = ShaderBuilder{}
                   .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                   .SetEntrypoint("SamplingVertexMain")
@@ -69,8 +69,7 @@ class Compute final : public Drawable {
   }
 
   Compute(const UniqueGPUDevice& device) {
-    auto code = fml::NonOwnedMapping{xxd_triangle_library_data,
-                                     xxd_triangle_library_length};
+    auto code = fml::NonOwnedMapping{xxd_compute_data, xxd_compute_length};
     compute_pipeline_ = ComputePipelineBuilder{}
                             .SetDimensions({1, 1, 1})
                             .SetShader(&code, SDL_GPU_SHADERFORMAT_MSL)
@@ -154,6 +153,8 @@ class Compute final : public Drawable {
     FML_DEFER(SDL_EndGPUComputePass(compute_pass));
 
     SDL_BindGPUComputePipeline(compute_pass, compute_pipeline_.get().value);
+    SDL_BindGPUComputeStorageTextures(compute_pass, 0, &texture_.get().value,
+                                      1);
     SDL_DispatchGPUCompute(compute_pass, 800, 600, 1);
 
     is_valid_ = true;

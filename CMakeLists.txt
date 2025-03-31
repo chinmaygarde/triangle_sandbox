@@ -19,6 +19,7 @@ include(FetchContent)
 enable_testing()
 include(GoogleTest)
 include(CTest)
+include(shader)
 
 
 # Setup Slang

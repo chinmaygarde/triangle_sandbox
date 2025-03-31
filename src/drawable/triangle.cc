@@ -4,13 +4,12 @@
 #include "buffer.h"
 #include "pipeline.h"
 #include "shader.h"
-#include "triangle_library.h"
+#include "triangle.slang.h"
 
 namespace ts {
 
 Triangle::Triangle(const UniqueGPUDevice& device) {
-  auto code = fml::NonOwnedMapping(xxd_triangle_library_data,
-                                   xxd_triangle_library_length);
+  auto code = fml::NonOwnedMapping(xxd_triangle_data, xxd_triangle_length);
 
   auto vs = ShaderBuilder{}
                 .SetStage(SDL_GPU_SHADERSTAGE_VERTEX)
