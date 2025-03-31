@@ -128,42 +128,50 @@ class Compute final : public Drawable {
     }
 
     glm::ivec2 dims = {800, 600};
-    texture_ = CreateGPUTexture(device.get(), {dims, 1}, SDL_GPU_TEXTURETYPE_2D,
-                                SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-                                SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE |
-                                    SDL_GPU_TEXTUREUSAGE_SAMPLER);
-    if (!texture_.is_valid()) {
+    rw_texture_ =
+        CreateGPUTexture(device.get(), {dims, 1}, SDL_GPU_TEXTURETYPE_2D,
+                         SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
+                         SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE |
+                             SDL_GPU_TEXTUREUSAGE_SAMPLER);
+    if (!rw_texture_.is_valid()) {
       return;
     }
 
-    auto command_buffer = SDL_AcquireGPUCommandBuffer(device.get());
+    is_valid_ = true;
+  }
+
+  void DispatchCompute() {
+    if (!is_valid_) {
+      return;
+    }
+    auto command_buffer = SDL_AcquireGPUCommandBuffer(rw_texture_.get().device);
     if (!command_buffer) {
+      FML_LOG(ERROR) << "Could not create command buffer: " << SDL_GetError();
       return;
     }
     FML_DEFER(SDL_SubmitGPUCommandBuffer(command_buffer));
 
     SDL_GPUStorageTextureReadWriteBinding binding = {
-        .texture = texture_.get().value,
+        .texture = rw_texture_.get().value,
     };
     auto compute_pass =
         SDL_BeginGPUComputePass(command_buffer, &binding, 1u, nullptr, 0u);
     if (!compute_pass) {
+      FML_LOG(ERROR) << "Could not create compute pass: " << SDL_GetError();
       return;
     }
     FML_DEFER(SDL_EndGPUComputePass(compute_pass));
 
     SDL_BindGPUComputePipeline(compute_pass, compute_pipeline_.get().value);
-    SDL_BindGPUComputeStorageTextures(compute_pass, 0, &texture_.get().value,
-                                      1);
     SDL_DispatchGPUCompute(compute_pass, 800, 600, 1);
-
-    is_valid_ = true;
   }
 
   bool Draw(SDL_GPURenderPass* pass) override {
     if (!is_valid_) {
       return false;
     }
+
+    DispatchCompute();
 
     SDL_BindGPUGraphicsPipeline(pass, render_pipeline_.get().value);
     SDL_GPUBufferBinding vtx_binding = {
@@ -172,7 +180,7 @@ class Compute final : public Drawable {
     SDL_BindGPUVertexBuffers(pass, 0, &vtx_binding, 1u);
     SDL_GPUTextureSamplerBinding frag_sampler_bindings = {
         .sampler = render_sampler_.get().value,
-        .texture = texture_.get().value,
+        .texture = rw_texture_.get().value,
     };
     SDL_BindGPUFragmentSamplers(pass, 0, &frag_sampler_bindings, 1u);
     SDL_DrawGPUPrimitives(pass, 4, 1, 0, 0);
@@ -183,7 +191,7 @@ class Compute final : public Drawable {
  private:
   UniqueGPUComputePipeline compute_pipeline_;
   UniqueGPUGraphicsPipeline render_pipeline_;
-  UniqueGPUTexture texture_;
+  UniqueGPUTexture rw_texture_;
   UniqueGPUBuffer render_vtx_buffer_;
   UniqueGPUSampler render_sampler_;
   bool is_valid_ = false;
