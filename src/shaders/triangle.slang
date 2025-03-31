@@ -64,9 +64,10 @@ SamplingVertexOut SamplingVertexMain(SamplingVertexIn vtx) {
     return out;
 }
 
-Sampler2D uTextureSampler;
+Texture2D uTexture : register(t0);
+SamplerState uSamplerState : register(s0);
 
 [Shader("fragment")]
 float4 SamplingFragmentMain(SamplingFragmentIn frag: SAMPLING_FRAGMENT_IN) : SV_Target {
-    return uTextureSampler.Sample(frag.uv);
+    return uTexture.Sample(uSamplerState, frag.uv);
 }
