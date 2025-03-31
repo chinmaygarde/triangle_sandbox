@@ -39,6 +39,11 @@ class GraphicsPipelineBuilder {
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphicsPipelineBuilder);
 };
 
+template <class T>
+T MakeGroupCount(T data_size, T thread_count) {
+  return (data_size + thread_count - T{1}) / thread_count;
+}
+
 class ComputePipelineBuilder {
  public:
   ComputePipelineBuilder() {}
@@ -108,7 +113,7 @@ class ComputePipelineBuilder {
   fml::Mapping* shader_ = nullptr;
   std::string entrypoint_;
   SDL_GPUShaderFormat format_ = SDL_GPU_SHADERFORMAT_MSL;
-  glm::ivec3 dimensions_ = {};
+  glm::ivec3 dimensions_ = {1, 1, 1};
   Uint32 num_samplers_ = {};
   Uint32 num_readonly_storage_textures_ = {};
   Uint32 num_readonly_storage_buffers_ = {};

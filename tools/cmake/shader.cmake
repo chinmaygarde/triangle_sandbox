@@ -11,11 +11,13 @@ function(add_shader TARGET SHADER_FILE)
 
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.metal
+           ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.reflection.json
     DEPENDS shaders/${SHADER_FILE}
     COMMAND ${slang_sdk_SOURCE_DIR}/bin/slangc
-            -g
-            -target metal
+            -line-directive-mode none
+            -O0
             -o ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.metal
+            -reflection-json ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.reflection.json
             ${CMAKE_CURRENT_SOURCE_DIR}/shaders/${SHADER_FILE}
   )
 

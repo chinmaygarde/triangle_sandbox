@@ -70,12 +70,13 @@ class Compute final : public Drawable {
 
   Compute(const UniqueGPUDevice& device) {
     auto code = fml::NonOwnedMapping{xxd_compute_data, xxd_compute_length};
-    compute_pipeline_ = ComputePipelineBuilder{}
-                            .SetDimensions({1, 1, 1})
-                            .SetShader(&code, SDL_GPU_SHADERFORMAT_MSL)
-                            .SetEntrypoint("ComputeAdder")
-                            .SetResourceCounts(0, 0, 0, 1, 0, 0)
-                            .Build(device);
+    compute_pipeline_ =
+        ComputePipelineBuilder{}
+            .SetDimensions({thread_count_.x, thread_count_.y, 1})
+            .SetShader(&code, SDL_GPU_SHADERFORMAT_MSL)
+            .SetEntrypoint("ComputeAdder")
+            .SetResourceCounts(0, 0, 0, 1, 0, 0)
+            .Build(device);
     if (!compute_pipeline_.is_valid()) {
       return;
     }
@@ -120,8 +121,8 @@ class Compute final : public Drawable {
             .address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
             .address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
             .address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
-            .min_filter = SDL_GPU_FILTER_LINEAR,
-            .mag_filter = SDL_GPU_FILTER_LINEAR,
+            .min_filter = SDL_GPU_FILTER_NEAREST,
+            .mag_filter = SDL_GPU_FILTER_NEAREST,
         });
     if (!render_sampler_.is_valid()) {
       return;
@@ -163,7 +164,8 @@ class Compute final : public Drawable {
     FML_DEFER(SDL_EndGPUComputePass(compute_pass));
 
     SDL_BindGPUComputePipeline(compute_pass, compute_pipeline_.get().value);
-    SDL_DispatchGPUCompute(compute_pass, 800, 600, 1);
+    auto group_count = MakeGroupCount(glm::ivec2{800, 600}, thread_count_);
+    SDL_DispatchGPUCompute(compute_pass, group_count.x, group_count.y, 1);
   }
 
   bool Draw(SDL_GPURenderPass* pass) override {
@@ -189,6 +191,7 @@ class Compute final : public Drawable {
   }
 
  private:
+  glm::ivec2 thread_count_ = {32, 32};
   UniqueGPUComputePipeline compute_pipeline_;
   UniqueGPUGraphicsPipeline render_pipeline_;
   UniqueGPUTexture rw_texture_;
