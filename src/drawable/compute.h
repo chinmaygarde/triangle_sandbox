@@ -128,13 +128,12 @@ class Compute final : public Drawable {
       return;
     }
 
-    glm::ivec2 dims = {800, 600};
     rw_texture_ =
-        CreateGPUTexture(device.get(), {dims, 1}, SDL_GPU_TEXTURETYPE_2D,
+        CreateGPUTexture(device.get(), {800, 600, 1}, SDL_GPU_TEXTURETYPE_2D,
                          SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
                          SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE |
                              SDL_GPU_TEXTUREUSAGE_SAMPLER);
-    if (!rw_texture_.is_valid()) {
+    if (!rw_texture_.IsValid()) {
       return;
     }
 
@@ -145,7 +144,8 @@ class Compute final : public Drawable {
     if (!is_valid_) {
       return;
     }
-    auto command_buffer = SDL_AcquireGPUCommandBuffer(rw_texture_.get().device);
+    auto command_buffer =
+        SDL_AcquireGPUCommandBuffer(rw_texture_.texture.get().device);
     if (!command_buffer) {
       FML_LOG(ERROR) << "Could not create command buffer: " << SDL_GetError();
       return;
@@ -153,8 +153,7 @@ class Compute final : public Drawable {
     FML_DEFER(SDL_SubmitGPUCommandBuffer(command_buffer));
 
     SDL_GPUStorageTextureReadWriteBinding binding = {
-        .texture = rw_texture_.get().value,
-    };
+        .texture = rw_texture_.texture.get().value};
     auto compute_pass =
         SDL_BeginGPUComputePass(command_buffer, &binding, 1u, nullptr, 0u);
     if (!compute_pass) {
@@ -164,7 +163,9 @@ class Compute final : public Drawable {
     FML_DEFER(SDL_EndGPUComputePass(compute_pass));
 
     SDL_BindGPUComputePipeline(compute_pass, compute_pipeline_.get().value);
-    auto group_count = MakeGroupCount(glm::ivec2{800, 600}, thread_count_);
+    const auto image_size =
+        glm::ivec2(rw_texture_.info.width, rw_texture_.info.height);
+    auto group_count = MakeGroupCount(image_size, thread_count_);
     SDL_DispatchGPUCompute(compute_pass, group_count.x, group_count.y, 1);
   }
 
@@ -182,7 +183,7 @@ class Compute final : public Drawable {
     SDL_BindGPUVertexBuffers(pass, 0, &vtx_binding, 1u);
     SDL_GPUTextureSamplerBinding frag_sampler_bindings = {
         .sampler = render_sampler_.get().value,
-        .texture = rw_texture_.get().value,
+        .texture = rw_texture_.texture.get().value,
     };
     SDL_BindGPUFragmentSamplers(pass, 0, &frag_sampler_bindings, 1u);
     SDL_DrawGPUPrimitives(pass, 4, 1, 0, 0);
@@ -194,7 +195,7 @@ class Compute final : public Drawable {
   glm::ivec2 thread_count_ = {32, 32};
   UniqueGPUComputePipeline compute_pipeline_;
   UniqueGPUGraphicsPipeline render_pipeline_;
-  UniqueGPUTexture rw_texture_;
+  GPUTexture rw_texture_;
   UniqueGPUBuffer render_vtx_buffer_;
   UniqueGPUSampler render_sampler_;
   bool is_valid_ = false;

@@ -4,13 +4,13 @@
 
 namespace ts {
 
-UniqueGPUTexture CreateGPUTexture(SDL_GPUDevice* device,
-                                  glm::ivec3 dims,
-                                  SDL_GPUTextureType type,
-                                  SDL_GPUTextureFormat format,
-                                  SDL_GPUTextureUsageFlags usage,
-                                  Uint32 mip_levels,
-                                  SDL_GPUSampleCount sample_count) {
+GPUTexture CreateGPUTexture(SDL_GPUDevice* device,
+                            glm::ivec3 dims,
+                            SDL_GPUTextureType type,
+                            SDL_GPUTextureFormat format,
+                            SDL_GPUTextureUsageFlags usage,
+                            Uint32 mip_levels,
+                            SDL_GPUSampleCount sample_count) {
   SDL_GPUTextureCreateInfo info = {};
   info.type = type;
   info.format = format;
@@ -27,7 +27,7 @@ UniqueGPUTexture CreateGPUTexture(SDL_GPUDevice* device,
   UniqueGPUTexture::element_type res = {};
   res.device = device;
   res.value = texture;
-  return UniqueGPUTexture{res};
+  return {info, UniqueGPUTexture{res}};
 }
 
 UniqueGPUBuffer CreateGPUBuffer(SDL_GPUDevice* device,

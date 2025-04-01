@@ -5,8 +5,20 @@
 
 namespace ts {
 
+struct GPUTexture {
+  SDL_GPUTextureCreateInfo info = {};
+  UniqueGPUTexture texture;
+
+  GPUTexture() = default;
+
+  GPUTexture(SDL_GPUTextureCreateInfo info, UniqueGPUTexture texture)
+      : info(info), texture(std::move(texture)) {}
+
+  bool IsValid() const { return texture.is_valid(); }
+};
+
 [[nodiscard]]
-UniqueGPUTexture CreateGPUTexture(
+GPUTexture CreateGPUTexture(
     SDL_GPUDevice* device,
     glm::ivec3 dims,
     SDL_GPUTextureType type,
