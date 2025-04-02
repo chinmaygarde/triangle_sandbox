@@ -18,7 +18,8 @@ GPUTexture CreateGPUTexture(SDL_GPUDevice* device,
   info.width = dims.x;
   info.height = dims.y;
   info.layer_count_or_depth = dims.z;
-  info.num_levels = mip_levels, info.sample_count = sample_count;
+  info.num_levels = mip_levels;
+  info.sample_count = sample_count;
   auto texture = SDL_CreateGPUTexture(device, &info);
   if (!texture) {
     FML_LOG(ERROR) << "Could not create texture: " << SDL_GetError();

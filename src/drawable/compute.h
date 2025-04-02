@@ -70,14 +70,13 @@ class Compute final : public Drawable {
 
   Compute(const UniqueGPUDevice& device) {
     auto code = fml::NonOwnedMapping{xxd_compute_data, xxd_compute_length};
-    compute_pipeline_ =
-        ComputePipelineBuilder{}
-            .SetDimensions({thread_count_.x, thread_count_.y, 1})
-            .SetShader(&code, SDL_GPU_SHADERFORMAT_MSL)
-            .SetEntrypoint("ComputeAdder")
-            .SetResourceCounts(0, 0, 0, 1, 0, 0)
-            .Build(device);
-    if (!compute_pipeline_.is_valid()) {
+    compute_pipeline_ = ComputePipelineBuilder{}
+                            .SetDimensions({32, 32, 1})
+                            .SetShader(&code, SDL_GPU_SHADERFORMAT_MSL)
+                            .SetEntrypoint("ComputeAdder")
+                            .SetResourceCounts(0, 0, 0, 1, 0, 0)
+                            .Build(device);
+    if (!compute_pipeline_.IsValid()) {
       return;
     }
 
@@ -162,10 +161,13 @@ class Compute final : public Drawable {
     }
     FML_DEFER(SDL_EndGPUComputePass(compute_pass));
 
-    SDL_BindGPUComputePipeline(compute_pass, compute_pipeline_.get().value);
+    SDL_BindGPUComputePipeline(compute_pass,
+                               compute_pipeline_.pipeline.get().value);
     const auto image_size =
         glm::ivec2(rw_texture_.info.width, rw_texture_.info.height);
-    auto group_count = MakeGroupCount(image_size, thread_count_);
+    const auto group_count = MakeGroupCount(
+        image_size, glm::ivec2{compute_pipeline_.thread_count.x,
+                               compute_pipeline_.thread_count.y});
     SDL_DispatchGPUCompute(compute_pass, group_count.x, group_count.y, 1);
   }
 
@@ -192,8 +194,7 @@ class Compute final : public Drawable {
   }
 
  private:
-  glm::ivec2 thread_count_ = {32, 32};
-  UniqueGPUComputePipeline compute_pipeline_;
+  ComputePipeline compute_pipeline_;
   UniqueGPUGraphicsPipeline render_pipeline_;
   GPUTexture rw_texture_;
   UniqueGPUBuffer render_vtx_buffer_;

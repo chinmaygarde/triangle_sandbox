@@ -44,11 +44,23 @@ T MakeGroupCount(T data_size, T thread_count) {
   return (data_size + thread_count - T{1}) / thread_count;
 }
 
+struct ComputePipeline {
+  UniqueGPUComputePipeline pipeline;
+  glm::ivec3 thread_count = {};
+
+  ComputePipeline() = default;
+
+  ComputePipeline(UniqueGPUComputePipeline pipeline, glm::ivec3 dimensions)
+      : pipeline(std::move(pipeline)), thread_count(dimensions) {}
+
+  bool IsValid() const { return pipeline.is_valid(); }
+};
+
 class ComputePipelineBuilder {
  public:
   ComputePipelineBuilder() {}
 
-  UniqueGPUComputePipeline Build(const UniqueGPUDevice& device) const {
+  ComputePipeline Build(const UniqueGPUDevice& device) const {
     SDL_GPUComputePipelineCreateInfo info = {};
     if (shader_) {
       info.code = shader_->GetMapping();
@@ -73,7 +85,7 @@ class ComputePipelineBuilder {
     UniqueGPUComputePipeline::element_type res = {};
     res.device = device.get();
     res.value = pipeline;
-    return UniqueGPUComputePipeline{res};
+    return ComputePipeline(UniqueGPUComputePipeline{res}, dimensions_);
   }
 
   ComputePipelineBuilder& SetShader(fml::Mapping* shader,
