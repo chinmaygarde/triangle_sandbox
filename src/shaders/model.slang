@@ -28,6 +28,6 @@ VertexOut VertexMain(VertexIn vtx) {
 [Shader("fragment")]
 FragmentOut FragmentMain(FragmentIn frg : VARYING_FRAGMENT_IN) : SV_Target {
   FragmentOut res;
-  res.color = float4(1.0);
+  res.color = float4(1.0, 0.0, 1.0, 1.0);
   return res;
 }

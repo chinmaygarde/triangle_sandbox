@@ -17,17 +17,26 @@ class ModelRenderer final : public Drawable {
       FML_LOG(ERROR) << "Could not load model data.";
       return;
     }
-    Model model(device, *model_data);
-    if (!model.IsValid()) {
+    auto model = std::make_unique<Model>(device, *model_data);
+
+    if (!model->IsValid()) {
       FML_LOG(ERROR) << "Could not load model.";
       return;
     }
+
+    model_ = std::move(model);
     is_valid_ = true;
   }
 
-  bool Draw(SDL_GPURenderPass* pass) override { return true; }
+  bool Draw(SDL_GPURenderPass* pass) override {
+    if (!model_) {
+      return false;
+    }
+    return model_->Draw(pass);
+  }
 
  private:
+  std::unique_ptr<Model> model_;
   bool is_valid_ = false;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(ModelRenderer);

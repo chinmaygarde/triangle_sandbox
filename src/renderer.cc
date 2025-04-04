@@ -44,10 +44,14 @@ bool Renderer::Render() {
   const auto texture_format = SDL_GetGPUSwapchainTextureFormat(
       device.get(), context_->GetWindow().get());
 
-  auto texture = CreateGPUTexture(
-      device.get(), {texture_width, texture_height, 1u}, SDL_GPU_TEXTURETYPE_2D,
-      texture_format, SDL_GPU_TEXTUREUSAGE_COLOR_TARGET, 1u,
-      SDL_GPU_SAMPLECOUNT_4);
+  auto texture = CreateGPUTexture(device.get(),                         //
+                                  {texture_width, texture_height, 1u},  //
+                                  SDL_GPU_TEXTURETYPE_2D,               //
+                                  texture_format,                       //
+                                  SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,    //
+                                  1u,                                   //
+                                  SDL_GPU_SAMPLECOUNT_4                 //
+  );
   if (!texture.IsValid()) {
     return false;
   }
