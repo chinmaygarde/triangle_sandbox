@@ -2,6 +2,7 @@
 
 #include <fml/closure.h>
 #include "drawable/compute.h"
+#include "drawable/model_renderer.h"
 #include "drawable/triangle.h"
 
 namespace ts {
@@ -10,6 +11,8 @@ Renderer::Renderer(std::shared_ptr<Context> context)
     : context_(std::move(context)) {
   drawables_.emplace_back(std::make_unique<Compute>(context_->GetDevice()));
   drawables_.emplace_back(std::make_unique<Triangle>(context_->GetDevice()));
+  drawables_.emplace_back(
+      std::make_unique<ModelRenderer>(context_->GetDevice(), "DamagedHelmet"));
 }
 
 bool Renderer::Render() {

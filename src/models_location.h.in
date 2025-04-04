@@ -1,0 +1,4 @@
+
+#cmakedefine MODELS_LOCATION \
+    "@MODELS_LOCATION@"      \
+    "/"

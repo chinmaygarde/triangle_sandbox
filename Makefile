@@ -4,7 +4,7 @@
 .PHONY: clean build
 
 main: build
-	./build/src/triangle_sandbox
+	MTL_DEBUG_LAYER=1 MTL_HUD_ENABLED=1 ./build/src/triangle_sandbox
 
 test: build
 	ctest --test-dir build

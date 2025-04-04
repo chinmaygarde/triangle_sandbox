@@ -36,14 +36,14 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
   if (event->type == SDL_EVENT_QUIT) {
     return SDL_APP_SUCCESS;
   }
-  if (renderer_) {
-    return renderer_->Render() ? SDL_APP_CONTINUE : SDL_APP_FAILURE;
-  }
   return SDL_APP_CONTINUE;
 }
 
 HEDLEY_C_DECL
 SDL_AppResult SDL_AppIterate(void* appstate) {
+  if (renderer_) {
+    return renderer_->Render() ? SDL_APP_CONTINUE : SDL_APP_FAILURE;
+  }
   return SDL_APP_CONTINUE;
 }
 
