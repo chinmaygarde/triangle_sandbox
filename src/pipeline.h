@@ -26,6 +26,8 @@ class GraphicsPipelineBuilder {
   GraphicsPipelineBuilder& SetColorTargets(
       std::vector<SDL_GPUColorTargetDescription> color_targets);
 
+  GraphicsPipelineBuilder& SetSampleCount(SDL_GPUSampleCount sample_count);
+
   UniqueGPUGraphicsPipeline Build(const UniqueGPUDevice& device) const;
 
  private:
@@ -35,6 +37,7 @@ class GraphicsPipelineBuilder {
   std::vector<SDL_GPUVertexBufferDescription> vertex_buffers_;
   std::vector<SDL_GPUVertexAttribute> vertex_attribs_;
   std::vector<SDL_GPUColorTargetDescription> color_targets_;
+  SDL_GPUSampleCount sample_count_ = SDL_GPU_SAMPLECOUNT_1;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphicsPipelineBuilder);
 };

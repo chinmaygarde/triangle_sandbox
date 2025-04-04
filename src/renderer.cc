@@ -16,33 +16,48 @@ Renderer::Renderer(std::shared_ptr<Context> context)
 }
 
 bool Renderer::Render() {
-  auto command_buffer =
-      SDL_AcquireGPUCommandBuffer(context_->GetDevice().get());
+  const auto& device = context_->GetDevice();
+  auto command_buffer = SDL_AcquireGPUCommandBuffer(device.get());
   if (!command_buffer) {
     FML_LOG(ERROR) << "Could not get command buffer: " << SDL_GetError();
     return false;
   }
   FML_DEFER(SDL_SubmitGPUCommandBuffer(command_buffer));
-  SDL_GPUTexture* texture = nullptr;
+  SDL_GPUTexture* resolve_texture = nullptr;
   Uint32 texture_width = 0u;
   Uint32 texture_height = 0u;
-  if (!SDL_WaitAndAcquireGPUSwapchainTexture(
-          command_buffer, context_->GetWindow().get(), &texture, &texture_width,
-          &texture_height)) {
+  if (!SDL_WaitAndAcquireGPUSwapchainTexture(command_buffer,               //
+                                             context_->GetWindow().get(),  //
+                                             &resolve_texture,             //
+                                             &texture_width,               //
+                                             &texture_height               //
+                                             )) {
     FML_LOG(ERROR) << "Could not acquire swapchain image: " << SDL_GetError();
     return false;
   }
-  if (texture == NULL) {
+  if (resolve_texture == NULL) {
     // The wait completed with failure.
     FML_LOG(ERROR) << "Acquired swapchain texture was invalid.";
     return false;
   }
 
+  const auto texture_format = SDL_GetGPUSwapchainTextureFormat(
+      device.get(), context_->GetWindow().get());
+
+  auto texture = CreateGPUTexture(
+      device.get(), {texture_width, texture_height, 1u}, SDL_GPU_TEXTURETYPE_2D,
+      texture_format, SDL_GPU_TEXTUREUSAGE_COLOR_TARGET, 1u,
+      SDL_GPU_SAMPLECOUNT_4);
+  if (!texture.IsValid()) {
+    return false;
+  }
+
   SDL_GPUColorTargetInfo color_info = {};
-  color_info.texture = texture;
+  color_info.texture = texture.texture.get().value;
+  color_info.resolve_texture = resolve_texture;
   color_info.clear_color = {1.0f, 0.0f, 1.0f, 1.0f};
   color_info.load_op = SDL_GPU_LOADOP_CLEAR;
-  color_info.store_op = SDL_GPU_STOREOP_STORE;
+  color_info.store_op = SDL_GPU_STOREOP_RESOLVE;
 
   auto render_pass =
       SDL_BeginGPURenderPass(command_buffer, &color_info, 1, NULL);

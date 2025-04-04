@@ -19,7 +19,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     return SDL_APP_FAILURE;
   }
 
-  UniqueSDLWindow window(SDL_CreateWindow("Triangle Sandbox", 640, 480, 0));
+  UniqueSDLWindow window(SDL_CreateWindow("Triangle Sandbox", 1200, 800, 0));
 
   if (!window.is_valid()) {
     SDL_Log("Couldn't create window: %s", SDL_GetError());

@@ -65,6 +65,7 @@ class Compute final : public Drawable {
             },
         })
         .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP)
+        .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
         .Build(device);
   }
 
@@ -128,7 +129,7 @@ class Compute final : public Drawable {
     }
 
     rw_texture_ =
-        CreateGPUTexture(device.get(), {800, 600, 1}, SDL_GPU_TEXTURETYPE_2D,
+        CreateGPUTexture(device.get(), {1200, 800, 1}, SDL_GPU_TEXTURETYPE_2D,
                          SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
                          SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE |
                              SDL_GPU_TEXTUREUSAGE_SAMPLER);

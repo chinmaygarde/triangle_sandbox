@@ -56,6 +56,7 @@ UniqueGPUGraphicsPipeline GraphicsPipelineBuilder::Build(
   info.vertex_input_state.vertex_attributes = vertex_attribs_.data();
   info.target_info.color_target_descriptions = color_targets_.data();
   info.target_info.num_color_targets = color_targets_.size();
+  info.multisample_state.sample_count = sample_count_;
   auto pipeline = SDL_CreateGPUGraphicsPipeline(device.get(), &info);
   if (!pipeline) {
     FML_LOG(ERROR) << "Could not create graphics pipeline: " << SDL_GetError();
@@ -66,6 +67,12 @@ UniqueGPUGraphicsPipeline GraphicsPipelineBuilder::Build(
   res.device = device.get();
   res.value = pipeline;
   return UniqueGPUGraphicsPipeline{res};
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetSampleCount(
+    SDL_GPUSampleCount sample_count) {
+  sample_count_ = sample_count;
+  return *this;
 }
 
 }  // namespace ts

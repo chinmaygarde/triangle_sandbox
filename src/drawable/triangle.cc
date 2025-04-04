@@ -54,6 +54,7 @@ Triangle::Triangle(const UniqueGPUDevice& device) {
               .blend_state = {},
           }})
           .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP)
+          .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
           .Build(device);
   if (!pipeline.is_valid()) {
     return;
