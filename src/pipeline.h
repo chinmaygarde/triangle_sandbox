@@ -28,6 +28,18 @@ class GraphicsPipelineBuilder {
 
   GraphicsPipelineBuilder& SetSampleCount(SDL_GPUSampleCount sample_count);
 
+  GraphicsPipelineBuilder& SetDepthStencilFormat(
+      SDL_GPUTextureFormat depth_stencil_format) {
+    depth_stencil_format_ = depth_stencil_format;
+    return *this;
+  }
+
+  GraphicsPipelineBuilder& SetDepthStencilState(
+      SDL_GPUDepthStencilState depth_stencil) {
+    depth_stencil_ = depth_stencil;
+    return *this;
+  }
+
   GraphicsPipelineBuilder& SetCullMode(SDL_GPUCullMode cull_mode) {
     cull_mode_ = cull_mode;
     return *this;
@@ -42,8 +54,10 @@ class GraphicsPipelineBuilder {
   std::vector<SDL_GPUVertexBufferDescription> vertex_buffers_;
   std::vector<SDL_GPUVertexAttribute> vertex_attribs_;
   std::vector<SDL_GPUColorTargetDescription> color_targets_;
+  SDL_GPUTextureFormat depth_stencil_format_ = SDL_GPU_TEXTUREFORMAT_INVALID;
   SDL_GPUSampleCount sample_count_ = SDL_GPU_SAMPLECOUNT_1;
   SDL_GPUCullMode cull_mode_ = SDL_GPU_CULLMODE_NONE;
+  SDL_GPUDepthStencilState depth_stencil_ = {};
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphicsPipelineBuilder);
 };

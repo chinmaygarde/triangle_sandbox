@@ -58,6 +58,11 @@ UniqueGPUGraphicsPipeline GraphicsPipelineBuilder::Build(
   info.target_info.num_color_targets = color_targets_.size();
   info.multisample_state.sample_count = sample_count_;
   info.rasterizer_state.cull_mode = cull_mode_;
+  info.depth_stencil_state = depth_stencil_;
+  if (depth_stencil_format_ != SDL_GPU_TEXTUREFORMAT_INVALID) {
+    info.target_info.has_depth_stencil_target = true;
+    info.target_info.depth_stencil_format = depth_stencil_format_;
+  }
 
   auto pipeline = SDL_CreateGPUGraphicsPipeline(device.get(), &info);
   if (!pipeline) {

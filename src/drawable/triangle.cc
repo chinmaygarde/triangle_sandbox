@@ -56,6 +56,7 @@ Triangle::Triangle(const UniqueGPUDevice& device) {
           }})
           .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP)
           .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
+          .SetDepthStencilFormat(SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT)
           .Build(device);
   if (!pipeline.is_valid()) {
     return;

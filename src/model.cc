@@ -192,47 +192,54 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
                 .SetResourceCounts(0, 0, 0, 0)
                 .Build(device);
 
-  pipeline_ = GraphicsPipelineBuilder{}
-                  .SetColorTargets({
-                      SDL_GPUColorTargetDescription{
-                          .format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
-                      },
-                  })
-                  .SetVertexShader(&vs)
-                  .SetFragmentShader(&fs)
-                  .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLELIST)
-                  .SetVertexAttribs({
-                      // Position
-                      SDL_GPUVertexAttribute{
-                          .buffer_slot = 0,
-                          .location = 0,
-                          .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-                          .offset = offsetof(Vertex, position),
-                      },
-                      // Normal
-                      SDL_GPUVertexAttribute{
-                          .buffer_slot = 0,
-                          .location = 1,
-                          .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-                          .offset = offsetof(Vertex, position),
-                      },
-                      // Texture Coords
-                      SDL_GPUVertexAttribute{
-                          .buffer_slot = 0,
-                          .location = 2,
-                          .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
-                          .offset = offsetof(Vertex, position),
-                      },
-                  })
-                  .SetVertexBuffers({
-                      SDL_GPUVertexBufferDescription{
-                          .slot = 0u,
-                          .pitch = sizeof(Vertex),
-                      },
-                  })
-                  .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
-                  .SetCullMode(SDL_GPU_CULLMODE_BACK)
-                  .Build(device);
+  pipeline_ =
+      GraphicsPipelineBuilder{}
+          .SetColorTargets({
+              SDL_GPUColorTargetDescription{
+                  .format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
+              },
+          })
+          .SetVertexShader(&vs)
+          .SetFragmentShader(&fs)
+          .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLELIST)
+          .SetVertexAttribs({
+              // Position
+              SDL_GPUVertexAttribute{
+                  .buffer_slot = 0,
+                  .location = 0,
+                  .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
+                  .offset = offsetof(Vertex, position),
+              },
+              // Normal
+              SDL_GPUVertexAttribute{
+                  .buffer_slot = 0,
+                  .location = 1,
+                  .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
+                  .offset = offsetof(Vertex, position),
+              },
+              // Texture Coords
+              SDL_GPUVertexAttribute{
+                  .buffer_slot = 0,
+                  .location = 2,
+                  .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
+                  .offset = offsetof(Vertex, position),
+              },
+          })
+          .SetVertexBuffers({
+              SDL_GPUVertexBufferDescription{
+                  .slot = 0u,
+                  .pitch = sizeof(Vertex),
+              },
+          })
+          .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
+          .SetCullMode(SDL_GPU_CULLMODE_BACK)
+          .SetDepthStencilFormat(SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT)
+          .SetDepthStencilState(SDL_GPUDepthStencilState{
+              .compare_op = SDL_GPU_COMPAREOP_LESS,
+              .enable_depth_test = true,
+              .enable_depth_write = true,
+          })
+          .Build(device);
   if (!pipeline_.is_valid()) {
     return false;
   }
@@ -272,10 +279,10 @@ bool Model::Draw(SDL_GPUCommandBuffer* command_buffer,
 
   {
     glm::mat4 proj =
-        glm::perspectiveLH_ZO(glm::radians(60.0), 800.0 / 600.0, -10.0, 10.0);
-    glm::mat4 view = glm::lookAtLH(glm::vec3{0.0, 0.0, -5.0},  // eye
-                                   glm::vec3{0},               // center
-                                   glm::vec3{0.0, 1.0, 0.0}    // up
+        glm::perspectiveLH_ZO(glm::radians(60.0), 800.0 / 600.0, 0.1, 1000.0);
+    glm::mat4 view = glm::lookAtLH(glm::vec3{0.0, 0.0, -10.0},  // eye
+                                   glm::vec3{0},                // center
+                                   glm::vec3{0.0, 1.0, 0.0}     // up
     );
     auto mvp = proj * view;
     SDL_PushGPUVertexUniformData(command_buffer, 0, &mvp, sizeof(mvp));

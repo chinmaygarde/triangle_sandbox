@@ -44,27 +44,52 @@ bool Renderer::Render() {
   const auto texture_format = SDL_GetGPUSwapchainTextureFormat(
       device.get(), context_->GetWindow().get());
 
-  auto texture = CreateGPUTexture(device.get(),                         //
-                                  {texture_width, texture_height, 1u},  //
-                                  SDL_GPU_TEXTURETYPE_2D,               //
-                                  texture_format,                       //
-                                  SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,    //
-                                  1u,                                   //
-                                  SDL_GPU_SAMPLECOUNT_4                 //
+  auto color_texture = CreateGPUTexture(device.get(),                         //
+                                        {texture_width, texture_height, 1u},  //
+                                        SDL_GPU_TEXTURETYPE_2D,               //
+                                        texture_format,                       //
+                                        SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,    //
+                                        1u,                                   //
+                                        SDL_GPU_SAMPLECOUNT_4                 //
   );
-  if (!texture.IsValid()) {
+
+  auto depth_texture =
+      CreateGPUTexture(device.get(),                               //
+                       {texture_width, texture_height, 1u},        //
+                       SDL_GPU_TEXTURETYPE_2D,                     //
+                       SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT,    //
+                       SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET,  //
+                       1u,                                         //
+                       SDL_GPU_SAMPLECOUNT_4                       //
+      );
+
+  if (!color_texture.IsValid() || !depth_texture.IsValid()) {
     return false;
   }
 
-  SDL_GPUColorTargetInfo color_info = {};
-  color_info.texture = texture.texture.get().value;
-  color_info.resolve_texture = resolve_texture;
-  color_info.clear_color = {1.0f, 0.0f, 1.0f, 1.0f};
-  color_info.load_op = SDL_GPU_LOADOP_CLEAR;
-  color_info.store_op = SDL_GPU_STOREOP_RESOLVE;
+  const auto color_info = SDL_GPUColorTargetInfo{
+      .texture = color_texture.texture.get().value,
+      .resolve_texture = resolve_texture,
+      .clear_color = {1.0f, 0.0f, 1.0f, 1.0f},
+      .load_op = SDL_GPU_LOADOP_CLEAR,
+      .store_op = SDL_GPU_STOREOP_RESOLVE,
+  };
 
-  auto render_pass =
-      SDL_BeginGPURenderPass(command_buffer, &color_info, 1, NULL);
+  const auto depth_stencil_info = SDL_GPUDepthStencilTargetInfo{
+      .texture = depth_texture.texture.get().value,
+      .clear_depth = 1.0f,
+      .load_op = SDL_GPU_LOADOP_CLEAR,
+      .store_op = SDL_GPU_STOREOP_DONT_CARE,
+      .stencil_load_op = SDL_GPU_LOADOP_CLEAR,
+      .stencil_store_op = SDL_GPU_STOREOP_DONT_CARE,
+      .clear_stencil = 0,
+  };
+
+  auto render_pass = SDL_BeginGPURenderPass(command_buffer,      //
+                                            &color_info,         //
+                                            1,                   //
+                                            &depth_stencil_info  //
+  );
 
   if (!render_pass) {
     FML_LOG(ERROR) << "Could not begin render pass: " << SDL_GetError();
