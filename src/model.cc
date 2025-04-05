@@ -81,6 +81,46 @@ static std::optional<SDL_GPUTextureFormat> PickFormat(int component_count,
   return std::nullopt;
 }
 
+static SDL_GPUSamplerAddressMode AddressModeTinyGLTFToSDLGPU(int val) {
+  switch (val) {
+    case TINYGLTF_TEXTURE_WRAP_REPEAT:
+      return SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+    case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
+      return SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
+      return SDL_GPU_SAMPLERADDRESSMODE_MIRRORED_REPEAT;
+  }
+  return SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+}
+
+static SDL_GPUFilter FilterModeTinyGLTFToSDLGPU(int val) {
+  switch (val) {
+    case TINYGLTF_TEXTURE_FILTER_NEAREST:
+    case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
+    case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_NEAREST:
+      return SDL_GPU_FILTER_NEAREST;
+    case TINYGLTF_TEXTURE_FILTER_LINEAR:
+    case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR:
+    case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR:
+      return SDL_GPU_FILTER_LINEAR;
+  }
+  return SDL_GPU_FILTER_NEAREST;
+}
+
+static SDL_GPUSamplerMipmapMode MipmapModeGLTFToSDLGPU(int val) {
+  switch (val) {
+    case TINYGLTF_TEXTURE_FILTER_NEAREST:
+    case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
+    case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_NEAREST:
+      return SDL_GPU_SAMPLERMIPMAPMODE_NEAREST;
+    case TINYGLTF_TEXTURE_FILTER_LINEAR:
+    case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR:
+    case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR:
+      return SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
+  }
+  return SDL_GPU_SAMPLERMIPMAPMODE_NEAREST;
+}
+
 Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
   if (!BuildPipeline(device)) {
     return;
@@ -179,6 +219,7 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
     break;
   }
 
+  // Handle images.
   for (size_t i = 0, count = model->images.size(); i < count; i++) {
     const auto& image = model->images[i];
     auto format = PickFormat(image.component, image.pixel_type, image.bits);
@@ -200,6 +241,20 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
                                              data_size                     //
         );
     textures_[i] = std::move(texture);
+  }
+
+  // Handle samplers.
+  for (size_t i = 0, count = model->samplers.size(); i < count; i++) {
+    const auto& sampler = model->samplers[i];
+    samplers_[i] = CreateSampler(
+        device.get(),
+        SDL_GPUSamplerCreateInfo{
+            .address_mode_u = AddressModeTinyGLTFToSDLGPU(sampler.wrapS),
+            .address_mode_v = AddressModeTinyGLTFToSDLGPU(sampler.wrapT),
+            .min_filter = FilterModeTinyGLTFToSDLGPU(sampler.minFilter),
+            .mag_filter = FilterModeTinyGLTFToSDLGPU(sampler.magFilter),
+            .mipmap_mode = MipmapModeGLTFToSDLGPU(sampler.minFilter),
+        });
   }
 
   if (!index_buffer_.is_valid() || !vertex_buffer_.is_valid()) {

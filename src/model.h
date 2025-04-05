@@ -24,6 +24,7 @@ class Model {
   UniqueGPUBuffer index_buffer_;
   Uint32 index_count_;
   std::unordered_map<size_t, GPUTexture> textures_;
+  std::unordered_map<size_t, UniqueGPUSampler> samplers_;
   bool is_valid_ = false;
 
   bool BuildPipeline(const UniqueGPUDevice& device);
