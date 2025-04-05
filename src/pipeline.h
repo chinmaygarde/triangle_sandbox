@@ -28,6 +28,11 @@ class GraphicsPipelineBuilder {
 
   GraphicsPipelineBuilder& SetSampleCount(SDL_GPUSampleCount sample_count);
 
+  GraphicsPipelineBuilder& SetCullMode(SDL_GPUCullMode cull_mode) {
+    cull_mode_ = cull_mode;
+    return *this;
+  }
+
   UniqueGPUGraphicsPipeline Build(const UniqueGPUDevice& device) const;
 
  private:
@@ -38,6 +43,7 @@ class GraphicsPipelineBuilder {
   std::vector<SDL_GPUVertexAttribute> vertex_attribs_;
   std::vector<SDL_GPUColorTargetDescription> color_targets_;
   SDL_GPUSampleCount sample_count_ = SDL_GPU_SAMPLECOUNT_1;
+  SDL_GPUCullMode cull_mode_ = SDL_GPU_CULLMODE_NONE;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphicsPipelineBuilder);
 };

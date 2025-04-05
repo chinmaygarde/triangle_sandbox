@@ -9,7 +9,8 @@ class Triangle final : public Drawable {
  public:
   Triangle(const UniqueGPUDevice& device);
 
-  bool Draw(SDL_GPURenderPass* pass) override;
+  bool Draw(SDL_GPUCommandBuffer* command_buffer,
+            SDL_GPURenderPass* pass) override;
 
  private:
   UniqueGPUGraphicsPipeline pipeline_;

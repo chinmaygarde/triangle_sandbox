@@ -1,6 +1,10 @@
 #include "model.h"
 
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
+
 #include "buffer.h"
+#include "macros.h"
 #include "model.slang.h"
 #include "pipeline.h"
 #include "shader.h"
@@ -41,11 +45,6 @@ static std::vector<uint32_t> ReadIndexBuffer(const uint8_t* buffer,
       return ReadIndexBuffer<uint32_t, int32_t>(buffer, item_count);
     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
       return ReadIndexBuffer<uint32_t, uint32_t>(buffer, item_count);
-    case TINYGLTF_COMPONENT_TYPE_FLOAT:
-      return ReadIndexBuffer<uint32_t, float>(buffer, item_count);
-    case TINYGLTF_COMPONENT_TYPE_DOUBLE:
-      return ReadIndexBuffer<uint32_t, double>(buffer, item_count);
-      break;
   }
   return {};
 }
@@ -184,13 +183,13 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
                 .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                 .SetStage(SDL_GPU_SHADERSTAGE_VERTEX)
                 .SetEntrypoint("VertexMain")
-                .SetResourceCounts(0, 0, 0, 0)  // FIXME
+                .SetResourceCounts(0, 0, 0, 1u)
                 .Build(device);
   auto fs = ShaderBuilder{}
                 .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                 .SetStage(SDL_GPU_SHADERSTAGE_FRAGMENT)
                 .SetEntrypoint("FragmentMain")
-                .SetResourceCounts(0, 0, 0, 0)  // FIXME
+                .SetResourceCounts(0, 0, 0, 0)
                 .Build(device);
 
   pipeline_ = GraphicsPipelineBuilder{}
@@ -232,6 +231,7 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
                       },
                   })
                   .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
+                  .SetCullMode(SDL_GPU_CULLMODE_BACK)
                   .Build(device);
   if (!pipeline_.is_valid()) {
     return false;
@@ -239,10 +239,14 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
   return true;
 }
 
-bool Model::Draw(SDL_GPURenderPass* pass) {
+bool Model::Draw(SDL_GPUCommandBuffer* command_buffer,
+                 SDL_GPURenderPass* pass) {
   if (!IsValid()) {
     return false;
   }
+
+  SDL_PushGPUDebugGroup(command_buffer, "Model");
+  FML_DEFER(SDL_PopGPUDebugGroup(command_buffer));
 
   if (index_count_ == 0) {
     return true;
@@ -264,6 +268,17 @@ bool Model::Draw(SDL_GPURenderPass* pass) {
         .offset = 0u,
     };
     SDL_BindGPUIndexBuffer(pass, &binding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+  }
+
+  {
+    glm::mat4 proj =
+        glm::perspectiveLH_ZO(glm::radians(60.0), 800.0 / 600.0, -10.0, 10.0);
+    glm::mat4 view = glm::lookAtLH(glm::vec3{0.0, 0.0, -5.0},  // eye
+                                   glm::vec3{0},               // center
+                                   glm::vec3{0.0, 1.0, 0.0}    // up
+    );
+    auto mvp = proj * view;
+    SDL_PushGPUVertexUniformData(command_buffer, 0, &mvp, sizeof(mvp));
   }
 
   SDL_DrawGPUIndexedPrimitives(pass, index_count_, 1, 0, 0, 0);

@@ -15,7 +15,7 @@ class Model {
 
   bool IsValid() const;
 
-  bool Draw(SDL_GPURenderPass* pass);
+  bool Draw(SDL_GPUCommandBuffer* command_buffer, SDL_GPURenderPass* pass);
 
  private:
   tinygltf::Model model_;

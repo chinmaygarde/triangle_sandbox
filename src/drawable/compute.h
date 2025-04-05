@@ -172,12 +172,16 @@ class Compute final : public Drawable {
     SDL_DispatchGPUCompute(compute_pass, group_count.x, group_count.y, 1);
   }
 
-  bool Draw(SDL_GPURenderPass* pass) override {
+  bool Draw(SDL_GPUCommandBuffer* command_buffer,
+            SDL_GPURenderPass* pass) override {
     if (!is_valid_) {
       return false;
     }
 
     DispatchCompute();
+
+    SDL_PushGPUDebugGroup(command_buffer, "ComputeDraw");
+    FML_DEFER(SDL_PopGPUDebugGroup(command_buffer));
 
     SDL_BindGPUGraphicsPipeline(pass, render_pipeline_.get().value);
     SDL_GPUBufferBinding vtx_binding = {

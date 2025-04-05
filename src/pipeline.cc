@@ -57,6 +57,8 @@ UniqueGPUGraphicsPipeline GraphicsPipelineBuilder::Build(
   info.target_info.color_target_descriptions = color_targets_.data();
   info.target_info.num_color_targets = color_targets_.size();
   info.multisample_state.sample_count = sample_count_;
+  info.rasterizer_state.cull_mode = cull_mode_;
+
   auto pipeline = SDL_CreateGPUGraphicsPipeline(device.get(), &info);
   if (!pipeline) {
     FML_LOG(ERROR) << "Could not create graphics pipeline: " << SDL_GetError();

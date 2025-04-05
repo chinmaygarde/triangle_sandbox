@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include "buffer.h"
+#include "macros.h"
 #include "pipeline.h"
 #include "shader.h"
 #include "triangle.slang.h"
@@ -83,10 +84,14 @@ Triangle::Triangle(const UniqueGPUDevice& device) {
   is_valid_ = true;
 }
 
-bool Triangle::Draw(SDL_GPURenderPass* pass) {
+bool Triangle::Draw(SDL_GPUCommandBuffer* command_buffer,
+                    SDL_GPURenderPass* pass) {
   if (!is_valid_) {
     return false;
   }
+  SDL_PushGPUDebugGroup(command_buffer, "Triangle");
+  FML_DEFER(SDL_PopGPUDebugGroup(command_buffer));
+
   SDL_BindGPUGraphicsPipeline(pass, pipeline_.get().value);
   {
     SDL_GPUBufferBinding binding = {

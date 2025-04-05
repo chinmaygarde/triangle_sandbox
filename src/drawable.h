@@ -11,7 +11,8 @@ class Drawable {
 
   virtual ~Drawable() = default;
 
-  virtual bool Draw(SDL_GPURenderPass* pass) = 0;
+  virtual bool Draw(SDL_GPUCommandBuffer* command_buffer,
+                    SDL_GPURenderPass* pass) = 0;
 
  private:
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Drawable);

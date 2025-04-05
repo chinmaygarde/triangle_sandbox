@@ -73,7 +73,7 @@ bool Renderer::Render() {
   FML_DEFER(SDL_EndGPURenderPass(render_pass));
 
   for (auto& drawable : drawables_) {
-    if (!drawable->Draw(render_pass)) {
+    if (!drawable->Draw(command_buffer, render_pass)) {
       return false;
     }
   }
