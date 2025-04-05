@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "macros.h"
 #include "sdl_types.h"
 
 namespace ts {
@@ -50,5 +51,17 @@ template <class T>
       usage                                             //
   );
 }
+
+[[nodiscard]]
+UniqueGPUTransferBuffer PopulateGPUTransferBuffer(SDL_GPUDevice* device,
+                                                  const uint8_t* data,
+                                                  size_t data_size);
+
+[[nodiscard]] GPUTexture PerformHostToDeviceTransferTexture2D(
+    SDL_GPUDevice* device,
+    SDL_GPUTextureFormat format,
+    glm::ivec2 dims,
+    const uint8_t* data,
+    size_t data_size);
 
 }  // namespace ts

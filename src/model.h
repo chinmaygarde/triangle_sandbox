@@ -2,7 +2,8 @@
 
 #include <fml/macros.h>
 #include <fml/mapping.h>
-#include <tiny_gltf.h>
+#include <unordered_map>
+#include "buffer.h"
 #include "sdl_types.h"
 
 namespace ts {
@@ -18,14 +19,12 @@ class Model {
   bool Draw(SDL_GPUCommandBuffer* command_buffer, SDL_GPURenderPass* pass);
 
  private:
-  tinygltf::Model model_;
   UniqueGPUGraphicsPipeline pipeline_;
   UniqueGPUBuffer vertex_buffer_;
   UniqueGPUBuffer index_buffer_;
   Uint32 index_count_;
+  std::unordered_map<size_t, GPUTexture> textures_;
   bool is_valid_ = false;
-
-  bool ReadModel(const fml::Mapping& mapping);
 
   bool BuildPipeline(const UniqueGPUDevice& device);
 

@@ -1,5 +1,6 @@
 #include "model.h"
 
+#include <tiny_gltf.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
@@ -49,21 +50,54 @@ static std::vector<uint32_t> ReadIndexBuffer(const uint8_t* buffer,
   return {};
 }
 
-Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
-  if (!ReadModel(mapping)) {
-    return;
+static std::unique_ptr<tinygltf::Model> ParseModel(
+    const fml::Mapping& mapping) {
+  tinygltf::TinyGLTF context;
+  std::string error;
+  std::string warning;
+  auto model = std::make_unique<tinygltf::Model>();
+  if (!context.LoadBinaryFromMemory(model.get(), &error, &warning,
+                                    mapping.GetMapping(), mapping.GetSize())) {
+    FML_LOG(ERROR) << "Could not load model";
+    if (!error.empty()) {
+      FML_LOG(ERROR) << "Error: " << error;
+    }
+    if (!warning.empty()) {
+      FML_LOG(ERROR) << "Warning: " << warning;
+    }
+    return nullptr;
   }
+  return model;
+}
+
+static std::optional<SDL_GPUTextureFormat> PickFormat(int component_count,
+                                                      int component_type,
+                                                      int bits_per_pixel) {
+  if (component_count == 4u &&
+      component_type == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE &&
+      bits_per_pixel == 8) {
+    return SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+  }
+  return std::nullopt;
+}
+
+Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
   if (!BuildPipeline(device)) {
     return;
   }
 
-  for (const auto& mesh : model_.meshes) {
+  auto model = ParseModel(mapping);
+  if (!model) {
+    return;
+  }
+
+  for (const auto& mesh : model->meshes) {
     for (const auto& primitive : mesh.primitives) {
       // Figure out indices.
-      const auto& index_acessor = model_.accessors[primitive.indices];
+      const auto& index_acessor = model->accessors[primitive.indices];
       const auto& index_buffer_view =
-          model_.bufferViews[index_acessor.bufferView];
-      const auto& index_buffer = model_.buffers[index_buffer_view.buffer];
+          model->bufferViews[index_acessor.bufferView];
+      const auto& index_buffer = model->buffers[index_buffer_view.buffer];
       const std::vector<uint32_t> indices =
           ReadIndexBuffer(index_buffer.data.data() + index_acessor.byteOffset +
                               index_buffer_view.byteOffset,  //
@@ -81,10 +115,10 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
 
       if (auto position = primitive.attributes.find("POSITION");
           position != primitive.attributes.end()) {
-        const tinygltf::Accessor& accessor = model_.accessors[position->second];
+        const tinygltf::Accessor& accessor = model->accessors[position->second];
         const tinygltf::BufferView& buffer_view =
-            model_.bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model_.buffers[buffer_view.buffer];
+            model->bufferViews[accessor.bufferView];
+        const tinygltf::Buffer& buffer = model->buffers[buffer_view.buffer];
         if (accessor.type == TINYGLTF_TYPE_VEC3 &&
             accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT &&
             buffer_view.byteStride == 0) {
@@ -100,10 +134,10 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
 
       if (auto normal = primitive.attributes.find("NORMAL");
           normal != primitive.attributes.end()) {
-        const tinygltf::Accessor& accessor = model_.accessors[normal->second];
+        const tinygltf::Accessor& accessor = model->accessors[normal->second];
         const tinygltf::BufferView& buffer_view =
-            model_.bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model_.buffers[buffer_view.buffer];
+            model->bufferViews[accessor.bufferView];
+        const tinygltf::Buffer& buffer = model->buffers[buffer_view.buffer];
         if (accessor.type == TINYGLTF_TYPE_VEC3 &&
             accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT &&
             buffer_view.byteStride == 0) {
@@ -119,10 +153,10 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
 
       if (auto texcoord = primitive.attributes.find("TEXCOORD_0");
           texcoord != primitive.attributes.end()) {
-        const tinygltf::Accessor& accessor = model_.accessors[texcoord->second];
+        const tinygltf::Accessor& accessor = model->accessors[texcoord->second];
         const tinygltf::BufferView& buffer_view =
-            model_.bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model_.buffers[buffer_view.buffer];
+            model->bufferViews[accessor.bufferView];
+        const tinygltf::Buffer& buffer = model->buffers[buffer_view.buffer];
         if (accessor.type == TINYGLTF_TYPE_VEC2 &&
             accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT &&
             buffer_view.byteStride == 0) {
@@ -145,6 +179,29 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
     break;
   }
 
+  for (size_t i = 0, count = model->images.size(); i < count; i++) {
+    const auto& image = model->images[i];
+    auto format = PickFormat(image.component, image.pixel_type, image.bits);
+    if (!format.has_value()) {
+      FML_LOG(ERROR) << "Could not find format for image.";
+      continue;
+    }
+    const auto data_size = SDL_CalculateGPUTextureFormatSize(
+        format.value(), image.width, image.height, 1u);
+    if (data_size > image.image.size()) {
+      FML_LOG(ERROR) << "Prevented OOB access for image data.";
+      continue;
+    }
+    auto texture =
+        PerformHostToDeviceTransferTexture2D(device.get(),                 //
+                                             format.value(),               //
+                                             {image.width, image.height},  //
+                                             image.image.data(),           //
+                                             data_size                     //
+        );
+    textures_[i] = std::move(texture);
+  }
+
   if (!index_buffer_.is_valid() || !vertex_buffer_.is_valid()) {
     return;
   }
@@ -156,24 +213,6 @@ Model::~Model() {}
 
 bool Model::IsValid() const {
   return is_valid_;
-}
-
-bool Model::ReadModel(const fml::Mapping& mapping) {
-  tinygltf::TinyGLTF context;
-  std::string error;
-  std::string warning;
-  if (!context.LoadBinaryFromMemory(&model_, &error, &warning,
-                                    mapping.GetMapping(), mapping.GetSize())) {
-    FML_LOG(ERROR) << "Could not load model";
-    if (!error.empty()) {
-      FML_LOG(ERROR) << "Error: " << error;
-    }
-    if (!warning.empty()) {
-      FML_LOG(ERROR) << "Warning: " << warning;
-    }
-    return false;
-  }
-  return true;
 }
 
 bool Model::BuildPipeline(const UniqueGPUDevice& device) {
