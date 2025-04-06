@@ -1,5 +1,7 @@
 cbuffer Uniforms {
     matrix mvp;
+    Texture2D texture;
+    SamplerState sampler;
 }
 
 struct VertexIn {
@@ -31,11 +33,11 @@ VertexOut VertexMain(VertexIn vtx) {
   return res;
 }
 
+Sampler2D uTextureSampler;
+
 [Shader("fragment")]
-FragmentOut FragmentMain(FragmentIn frg : VARYING_FRAGMENT_IN) : SV_Target {
-    FragmentOut res;
-    var light_direction = float3(0.0, 0.0, 1.0);
-    var intensity = dot(frg.normal, light_direction);
-    res.color = float4(float3(intensity), 1.0);
-    return res;
+FragmentOut FragmentMain(FragmentIn frg: VARYING_FRAGMENT_IN) : SV_Target {
+    FragmentOut out;
+    out.color = texture.Sample(sampler, frg.texture_coords);
+    return out;
 }

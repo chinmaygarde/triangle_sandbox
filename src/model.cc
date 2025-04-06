@@ -159,6 +159,7 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
         const tinygltf::BufferView& buffer_view =
             model->bufferViews[accessor.bufferView];
         const tinygltf::Buffer& buffer = model->buffers[buffer_view.buffer];
+        const auto stride = accessor.ByteStride(buffer_view);
         if (accessor.type == TINYGLTF_TYPE_VEC3 &&
             accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT &&
             buffer_view.byteStride == 0) {
@@ -166,7 +167,7 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
           for (size_t i = 0; i < accessor.count; i++) {
             memcpy(&vertices[i].position,
                    buffer.data.data() + accessor.byteOffset +
-                       buffer_view.byteOffset + (sizeof(glm::vec3) * i),
+                       buffer_view.byteOffset + stride * i,
                    sizeof(glm::vec3));
           }
         }
@@ -178,6 +179,7 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
         const tinygltf::BufferView& buffer_view =
             model->bufferViews[accessor.bufferView];
         const tinygltf::Buffer& buffer = model->buffers[buffer_view.buffer];
+        const auto stride = accessor.ByteStride(buffer_view);
         if (accessor.type == TINYGLTF_TYPE_VEC3 &&
             accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT &&
             buffer_view.byteStride == 0) {
@@ -185,7 +187,7 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
           for (size_t i = 0; i < accessor.count; i++) {
             memcpy(&vertices[i].normal,
                    buffer.data.data() + accessor.byteOffset +
-                       buffer_view.byteOffset + (sizeof(glm::vec3) * i),
+                       buffer_view.byteOffset + stride * i,
                    sizeof(glm::vec3));
           }
         }
@@ -197,14 +199,14 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
         const tinygltf::BufferView& buffer_view =
             model->bufferViews[accessor.bufferView];
         const tinygltf::Buffer& buffer = model->buffers[buffer_view.buffer];
+        const auto stride = accessor.ByteStride(buffer_view);
         if (accessor.type == TINYGLTF_TYPE_VEC2 &&
-            accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT &&
-            buffer_view.byteStride == 0) {
+            accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
           vertices.resize(glm::max(vertices.size(), accessor.count));
           for (size_t i = 0; i < accessor.count; i++) {
             memcpy(&vertices[i].textureCoords,
                    buffer.data.data() + accessor.byteOffset +
-                       buffer_view.byteOffset + (sizeof(glm::vec2) * i),
+                       buffer_view.byteOffset + stride * i,
                    sizeof(glm::vec2));
           }
         }
@@ -283,7 +285,7 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
                 .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                 .SetStage(SDL_GPU_SHADERSTAGE_FRAGMENT)
                 .SetEntrypoint("FragmentMain")
-                .SetResourceCounts(0, 0, 0, 0)
+                .SetResourceCounts(1u, 0, 0, 0)
                 .Build(device);
 
   pipeline_ =
@@ -309,14 +311,14 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
                   .buffer_slot = 0,
                   .location = 1,
                   .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-                  .offset = offsetof(Vertex, position),
+                  .offset = offsetof(Vertex, normal),
               },
               // Texture Coords
               SDL_GPUVertexAttribute{
                   .buffer_slot = 0,
                   .location = 2,
                   .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
-                  .offset = offsetof(Vertex, position),
+                  .offset = offsetof(Vertex, textureCoords),
               },
           })
           .SetVertexBuffers({
@@ -374,12 +376,20 @@ bool Model::Draw(SDL_GPUCommandBuffer* command_buffer,
   {
     glm::mat4 proj =
         glm::perspectiveLH_ZO(glm::radians(60.0), 800.0 / 600.0, 0.1, 1000.0);
-    glm::mat4 view = glm::lookAtLH(glm::vec3{0.0, 0.0, -10.0},  // eye
-                                   glm::vec3{0},                // center
-                                   glm::vec3{0.0, 1.0, 0.0}     // up
+    glm::mat4 view = glm::lookAtLH(glm::vec3{0.0, 0.0, -5.0},  // eye
+                                   glm::vec3{0},               // center
+                                   glm::vec3{0.0, 1.0, 0.0}    // up
     );
     auto mvp = proj * view;
     SDL_PushGPUVertexUniformData(command_buffer, 0, &mvp, sizeof(mvp));
+  }
+
+  {
+    const auto binding = SDL_GPUTextureSamplerBinding{
+        .texture = textures_.at(0).texture.get().value,
+        .sampler = samplers_.at(0).get().value,
+    };
+    SDL_BindGPUFragmentSamplers(pass, 0u, &binding, 1u);
   }
 
   SDL_DrawGPUIndexedPrimitives(pass, index_count_, 1, 0, 0, 0);
