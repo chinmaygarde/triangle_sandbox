@@ -1,6 +1,7 @@
 #include "model.h"
 
 #include <tiny_gltf.h>
+#include <algorithm>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
@@ -18,36 +19,42 @@ struct Vertex {
   glm::vec2 textureCoords;
 };
 
-template <class To, class From>
-static std::vector<To> ReadIndexBuffer(const uint8_t* buffer,
-                                       size_t item_count) {
-  std::vector<To> result;
-  result.resize(item_count);
+template <class From>
+static void ReadIndexBuffer(std::vector<uint32_t>& indices,
+                            const uint8_t* buffer,
+                            size_t item_count) {
+  const auto initial_count = indices.size();
+  indices.resize(initial_count + item_count);
   const auto from_buffer = reinterpret_cast<const From*>(buffer);
   for (size_t i = 0; i < item_count; i++) {
-    result[i] = static_cast<To>(from_buffer[i]);
+    indices[i + initial_count] = static_cast<uint32_t>(from_buffer[i]);
   }
-  return result;
 }
 
-static std::vector<uint32_t> ReadIndexBuffer(const uint8_t* buffer,
-                                             size_t item_count,
-                                             int item_component_type) {
+static void ReadIndexBuffer(std::vector<uint32_t>& indices,
+                            const uint8_t* buffer,
+                            size_t item_count,
+                            int item_component_type) {
   switch (item_component_type) {
     case TINYGLTF_COMPONENT_TYPE_BYTE:
-      return ReadIndexBuffer<uint32_t, int8_t>(buffer, item_count);
+      ReadIndexBuffer<int8_t>(indices, buffer, item_count);
+      break;
     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-      return ReadIndexBuffer<uint32_t, uint8_t>(buffer, item_count);
+      ReadIndexBuffer<uint8_t>(indices, buffer, item_count);
+      break;
     case TINYGLTF_COMPONENT_TYPE_SHORT:
-      return ReadIndexBuffer<uint32_t, int16_t>(buffer, item_count);
+      ReadIndexBuffer<int16_t>(indices, buffer, item_count);
+      break;
     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-      return ReadIndexBuffer<uint32_t, uint16_t>(buffer, item_count);
+      ReadIndexBuffer<uint16_t>(indices, buffer, item_count);
+      break;
     case TINYGLTF_COMPONENT_TYPE_INT:
-      return ReadIndexBuffer<uint32_t, int32_t>(buffer, item_count);
+      ReadIndexBuffer<int32_t>(indices, buffer, item_count);
+      break;
     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-      return ReadIndexBuffer<uint32_t, uint32_t>(buffer, item_count);
+      ReadIndexBuffer<uint32_t>(indices, buffer, item_count);
+      break;
   }
-  return {};
 }
 
 static std::unique_ptr<tinygltf::Model> ParseModel(
@@ -121,6 +128,32 @@ static SDL_GPUSamplerMipmapMode MipmapModeGLTFToSDLGPU(int val) {
   return SDL_GPU_SAMPLERMIPMAPMODE_NEAREST;
 }
 
+bool ReadVertexAttribute(std::vector<Vertex>& vertices,
+                         const tinygltf::Model& model,
+                         int attribute,
+                         size_t field_offset,
+                         size_t field_size,
+                         int check_type,
+                         int check_component_type) {
+  const tinygltf::Accessor& accessor = model.accessors[attribute];
+  const tinygltf::BufferView& buffer_view =
+      model.bufferViews[accessor.bufferView];
+  const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
+  if (accessor.type != check_type &&
+      accessor.componentType != check_component_type) {
+    return false;
+  }
+  const auto stride = accessor.ByteStride(buffer_view);
+  vertices.resize(std::max(vertices.size(), accessor.count));
+  const auto* data_ptr =
+      buffer.data.data() + accessor.byteOffset + buffer_view.byteOffset;
+  for (size_t i = 0; i < accessor.count; i++) {
+    std::memcpy(reinterpret_cast<uint8_t*>(&vertices[i]) + field_offset,
+                data_ptr + stride * i, field_size);
+  }
+  return true;
+}
+
 Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
   if (!BuildPipeline(device)) {
     return;
@@ -131,95 +164,81 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
     return;
   }
 
+  std::vector<uint32_t> indices;
+  std::vector<Vertex> vertices;
+
   for (const auto& mesh : model->meshes) {
     for (const auto& primitive : mesh.primitives) {
+      auto current_draw = DrawCall{
+          .first_vertex = static_cast<Uint32>(vertices.size()),
+          .first_index = static_cast<Uint32>(indices.size()),
+      };
+
       // Figure out indices.
-      const auto& index_acessor = model->accessors[primitive.indices];
-      const auto& index_buffer_view =
-          model->bufferViews[index_acessor.bufferView];
-      const auto& index_buffer = model->buffers[index_buffer_view.buffer];
-      const std::vector<uint32_t> indices =
-          ReadIndexBuffer(index_buffer.data.data() + index_acessor.byteOffset +
-                              index_buffer_view.byteOffset,  //
-                          index_acessor.count,               //
-                          index_acessor.componentType        //
-          );
+      {
+        const auto& index_acessor = model->accessors[primitive.indices];
+        const auto& index_buffer_view =
+            model->bufferViews[index_acessor.bufferView];
+        const auto& index_buffer = model->buffers[index_buffer_view.buffer];
+        ReadIndexBuffer(indices,
+                        index_buffer.data.data() + index_acessor.byteOffset +
+                            index_buffer_view.byteOffset,  //
+                        index_acessor.count,               //
+                        index_acessor.componentType        //
+        );
+        current_draw.last_index = indices.size();
+      }
 
-      index_buffer_ = PerformHostToDeviceTransfer(device,                    //
-                                                  indices,                   //
-                                                  SDL_GPU_BUFFERUSAGE_INDEX  //
-      );
-      index_count_ = indices.size();
-
-      std::vector<Vertex> vertices;
+      std::vector<Vertex> current_vertices;
 
       if (auto position = primitive.attributes.find("POSITION");
           position != primitive.attributes.end()) {
-        const tinygltf::Accessor& accessor = model->accessors[position->second];
-        const tinygltf::BufferView& buffer_view =
-            model->bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model->buffers[buffer_view.buffer];
-        const auto stride = accessor.ByteStride(buffer_view);
-        if (accessor.type == TINYGLTF_TYPE_VEC3 &&
-            accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT &&
-            buffer_view.byteStride == 0) {
-          vertices.resize(glm::max(vertices.size(), accessor.count));
-          for (size_t i = 0; i < accessor.count; i++) {
-            memcpy(&vertices[i].position,
-                   buffer.data.data() + accessor.byteOffset +
-                       buffer_view.byteOffset + stride * i,
-                   sizeof(glm::vec3));
-          }
-        }
+        ReadVertexAttribute(current_vertices,              //
+                            *model,                        //
+                            position->second,              //
+                            offsetof(Vertex, position),    //
+                            sizeof(Vertex::position),      //
+                            TINYGLTF_TYPE_VEC3,            //
+                            TINYGLTF_COMPONENT_TYPE_FLOAT  //
+        );
       }
 
       if (auto normal = primitive.attributes.find("NORMAL");
           normal != primitive.attributes.end()) {
-        const tinygltf::Accessor& accessor = model->accessors[normal->second];
-        const tinygltf::BufferView& buffer_view =
-            model->bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model->buffers[buffer_view.buffer];
-        const auto stride = accessor.ByteStride(buffer_view);
-        if (accessor.type == TINYGLTF_TYPE_VEC3 &&
-            accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT &&
-            buffer_view.byteStride == 0) {
-          vertices.resize(glm::max(vertices.size(), accessor.count));
-          for (size_t i = 0; i < accessor.count; i++) {
-            memcpy(&vertices[i].normal,
-                   buffer.data.data() + accessor.byteOffset +
-                       buffer_view.byteOffset + stride * i,
-                   sizeof(glm::vec3));
-          }
-        }
+        ReadVertexAttribute(current_vertices,              //
+                            *model,                        //
+                            normal->second,                //
+                            offsetof(Vertex, normal),      //
+                            sizeof(Vertex::normal),        //
+                            TINYGLTF_TYPE_VEC3,            //
+                            TINYGLTF_COMPONENT_TYPE_FLOAT  //
+        );
       }
 
       if (auto texcoord = primitive.attributes.find("TEXCOORD_0");
           texcoord != primitive.attributes.end()) {
-        const tinygltf::Accessor& accessor = model->accessors[texcoord->second];
-        const tinygltf::BufferView& buffer_view =
-            model->bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model->buffers[buffer_view.buffer];
-        const auto stride = accessor.ByteStride(buffer_view);
-        if (accessor.type == TINYGLTF_TYPE_VEC2 &&
-            accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-          vertices.resize(glm::max(vertices.size(), accessor.count));
-          for (size_t i = 0; i < accessor.count; i++) {
-            memcpy(&vertices[i].textureCoords,
-                   buffer.data.data() + accessor.byteOffset +
-                       buffer_view.byteOffset + stride * i,
-                   sizeof(glm::vec2));
-          }
-        }
-
-        vertex_buffer_ = PerformHostToDeviceTransfer(
-            device, vertices, SDL_GPU_BUFFERUSAGE_VERTEX);
+        ReadVertexAttribute(current_vertices,                 //
+                            *model,                           //
+                            texcoord->second,                 //
+                            offsetof(Vertex, textureCoords),  //
+                            sizeof(Vertex::textureCoords),    //
+                            TINYGLTF_TYPE_VEC2,               //
+                            TINYGLTF_COMPONENT_TYPE_FLOAT     //
+        );
       }
 
-      // Only handle one for now.
-      break;
+      std::ranges::move(current_vertices, std::back_inserter(vertices));
+      draws_.push_back(current_draw);
     }
-    break;
   }
+
+  index_buffer_ = PerformHostToDeviceTransfer(device,                    //
+                                              indices,                   //
+                                              SDL_GPU_BUFFERUSAGE_INDEX  //
+  );
+  index_count_ = indices.size();
+  vertex_buffer_ =
+      PerformHostToDeviceTransfer(device, vertices, SDL_GPU_BUFFERUSAGE_VERTEX);
 
   // Handle images.
   for (size_t i = 0, count = model->images.size(); i < count; i++) {
@@ -392,7 +411,15 @@ bool Model::Draw(SDL_GPUCommandBuffer* command_buffer,
     SDL_BindGPUFragmentSamplers(pass, 0u, &binding, 1u);
   }
 
-  SDL_DrawGPUIndexedPrimitives(pass, index_count_, 1, 0, 0, 0);
+  for (const auto& draw : draws_) {
+    SDL_DrawGPUIndexedPrimitives(pass,                                //
+                                 draw.last_index - draw.first_index,  //
+                                 1u,                                  //
+                                 draw.first_index,                    //
+                                 draw.first_vertex,                   //
+                                 0u                                   //
+    );
+  }
 
   return true;
 }
