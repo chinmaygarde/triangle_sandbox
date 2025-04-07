@@ -72,6 +72,10 @@ GPUTexture CreateGPUTexture(SDL_GPUDevice* device,
 UniqueGPUBuffer CreateGPUBuffer(SDL_GPUDevice* device,
                                 Uint32 size,
                                 SDL_GPUBufferUsageFlags usage) {
+  if (size == 0) {
+    FML_LOG(ERROR) << "Could not create zero sized buffer.";
+    return {};
+  }
   SDL_GPUBufferCreateInfo info = {};
   info.size = size;
   info.usage = usage;
@@ -128,6 +132,10 @@ UniqueGPUBuffer PerformHostToDeviceTransfer(const UniqueGPUDevice& device,
 UniqueGPUTransferBuffer PopulateGPUTransferBuffer(SDL_GPUDevice* device,
                                                   const uint8_t* data,
                                                   size_t data_size) {
+  if (data_size == 0) {
+    FML_LOG(ERROR) << "Could not create zero sized transfer buffer.";
+    return {};
+  }
   SDL_GPUTransferBufferCreateInfo info = {};
   info.size = data_size;
   info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;

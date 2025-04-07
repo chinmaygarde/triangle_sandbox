@@ -174,21 +174,6 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
           .first_index = static_cast<Uint32>(indices.size()),
       };
 
-      // Figure out indices.
-      {
-        const auto& index_acessor = model->accessors[primitive.indices];
-        const auto& index_buffer_view =
-            model->bufferViews[index_acessor.bufferView];
-        const auto& index_buffer = model->buffers[index_buffer_view.buffer];
-        ReadIndexBuffer(indices,
-                        index_buffer.data.data() + index_acessor.byteOffset +
-                            index_buffer_view.byteOffset,  //
-                        index_acessor.count,               //
-                        index_acessor.componentType        //
-        );
-        current_draw.last_index = indices.size();
-      }
-
       std::vector<Vertex> current_vertices;
 
       if (auto position = primitive.attributes.find("POSITION");
@@ -225,6 +210,28 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
                             TINYGLTF_TYPE_VEC2,               //
                             TINYGLTF_COMPONENT_TYPE_FLOAT     //
         );
+      }
+
+      {
+        if (primitive.indices >= 0) {
+          const auto& index_acessor = model->accessors.at(primitive.indices);
+          const auto& index_buffer_view =
+              model->bufferViews.at(index_acessor.bufferView);
+          const auto& index_buffer =
+              model->buffers.at(index_buffer_view.buffer);
+          ReadIndexBuffer(indices,
+                          index_buffer.data.data() + index_acessor.byteOffset +
+                              index_buffer_view.byteOffset,  //
+                          index_acessor.count,               //
+                          index_acessor.componentType        //
+          );
+        } else {
+          indices.reserve(indices.size() + current_vertices.size());
+          for (size_t i = 0; i < current_vertices.size(); i++) {
+            indices.push_back(i);
+          }
+        }
+        current_draw.last_index = indices.size();
       }
 
       std::ranges::move(current_vertices, std::back_inserter(vertices));
@@ -350,7 +357,7 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
           .SetCullMode(SDL_GPU_CULLMODE_BACK)
           .SetDepthStencilFormat(SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT)
           .SetDepthStencilState(SDL_GPUDepthStencilState{
-              .compare_op = SDL_GPU_COMPAREOP_LESS,
+              .compare_op = SDL_GPU_COMPAREOP_LESS_OR_EQUAL,
               .enable_depth_test = true,
               .enable_depth_write = true,
           })
@@ -394,12 +401,15 @@ bool Model::Draw(SDL_GPUCommandBuffer* command_buffer,
 
   {
     glm::mat4 proj =
-        glm::perspectiveLH_ZO(glm::radians(60.0), 800.0 / 600.0, 0.1, 1000.0);
+        glm::perspectiveLH_ZO(glm::radians(60.0), 800.0 / 600.0, 0.1, 100.0);
     glm::mat4 view = glm::lookAtLH(glm::vec3{0.0, 0.0, -5.0},  // eye
                                    glm::vec3{0},               // center
                                    glm::vec3{0.0, 1.0, 0.0}    // up
     );
-    auto mvp = proj * view;
+    glm::mat4 model = glm::mat4{1.0};
+    // model = glm::scale(model, glm::vec3{2.0, 2.0, 1.0});
+    // model = glm::rotate(model, glm::radians(45.0f), {0.0, 1.0, 0.0});
+    auto mvp = proj * view * model;
     SDL_PushGPUVertexUniformData(command_buffer, 0, &mvp, sizeof(mvp));
   }
 
