@@ -173,28 +173,27 @@ class Compute final : public Drawable {
     SDL_DispatchGPUCompute(compute_pass, group_count.x, group_count.y, 1);
   }
 
-  bool Draw(SDL_GPUCommandBuffer* command_buffer,
-            SDL_GPURenderPass* pass) override {
+  bool Draw(const DrawContext& context) override {
     if (!is_valid_) {
       return false;
     }
 
     DispatchCompute();
 
-    SDL_PushGPUDebugGroup(command_buffer, "ComputeDraw");
-    FML_DEFER(SDL_PopGPUDebugGroup(command_buffer));
+    SDL_PushGPUDebugGroup(context.command_buffer, "ComputeDraw");
+    FML_DEFER(SDL_PopGPUDebugGroup(context.command_buffer));
 
-    SDL_BindGPUGraphicsPipeline(pass, render_pipeline_.get().value);
+    SDL_BindGPUGraphicsPipeline(context.pass, render_pipeline_.get().value);
     SDL_GPUBufferBinding vtx_binding = {
         .buffer = render_vtx_buffer_.get().value,
     };
-    SDL_BindGPUVertexBuffers(pass, 0, &vtx_binding, 1u);
+    SDL_BindGPUVertexBuffers(context.pass, 0, &vtx_binding, 1u);
     SDL_GPUTextureSamplerBinding frag_sampler_bindings = {
         .sampler = render_sampler_.get().value,
         .texture = rw_texture_.texture.get().value,
     };
-    SDL_BindGPUFragmentSamplers(pass, 0, &frag_sampler_bindings, 1u);
-    SDL_DrawGPUPrimitives(pass, 4, 1, 0, 0);
+    SDL_BindGPUFragmentSamplers(context.pass, 0, &frag_sampler_bindings, 1u);
+    SDL_DrawGPUPrimitives(context.pass, 4, 1, 0, 0);
 
     return true;
   }

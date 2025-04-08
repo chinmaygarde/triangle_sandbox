@@ -4,11 +4,12 @@
 #include <fml/mapping.h>
 #include <unordered_map>
 #include "buffer.h"
+#include "drawable.h"
 #include "sdl_types.h"
 
 namespace ts {
 
-class Model {
+class Model final : public Drawable {
  public:
   Model(const UniqueGPUDevice& device, const fml::Mapping& mapping);
 
@@ -16,7 +17,7 @@ class Model {
 
   bool IsValid() const;
 
-  bool Draw(SDL_GPUCommandBuffer* command_buffer, SDL_GPURenderPass* pass);
+  bool Draw(const DrawContext& context) override;
 
  private:
   struct DrawCall {

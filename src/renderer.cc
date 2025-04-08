@@ -97,8 +97,14 @@ bool Renderer::Render() {
   }
   FML_DEFER(SDL_EndGPURenderPass(render_pass));
 
+  DrawContext context = {
+      .command_buffer = command_buffer,
+      .pass = render_pass,
+      .viewport = {texture_width, texture_height},
+  };
+
   for (auto& drawable : drawables_) {
-    if (!drawable->Draw(command_buffer, render_pass)) {
+    if (!drawable->Draw(context)) {
       return false;
     }
   }

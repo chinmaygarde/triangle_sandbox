@@ -85,23 +85,22 @@ Triangle::Triangle(const UniqueGPUDevice& device) {
   is_valid_ = true;
 }
 
-bool Triangle::Draw(SDL_GPUCommandBuffer* command_buffer,
-                    SDL_GPURenderPass* pass) {
+bool Triangle::Draw(const DrawContext& context) {
   if (!is_valid_) {
     return false;
   }
-  SDL_PushGPUDebugGroup(command_buffer, "Triangle");
-  FML_DEFER(SDL_PopGPUDebugGroup(command_buffer));
+  SDL_PushGPUDebugGroup(context.command_buffer, "Triangle");
+  FML_DEFER(SDL_PopGPUDebugGroup(context.command_buffer));
 
-  SDL_BindGPUGraphicsPipeline(pass, pipeline_.get().value);
+  SDL_BindGPUGraphicsPipeline(context.pass, pipeline_.get().value);
   {
     SDL_GPUBufferBinding binding = {
         .buffer = vtx_buffer_.get().value,
         .offset = 0u,
     };
-    SDL_BindGPUVertexBuffers(pass, 0u, &binding, 1u);
+    SDL_BindGPUVertexBuffers(context.pass, 0u, &binding, 1u);
   }
-  SDL_DrawGPUPrimitives(pass, 3, 1, 0, 0);
+  SDL_DrawGPUPrimitives(context.pass, 3, 1, 0, 0);
   return true;
 }
 

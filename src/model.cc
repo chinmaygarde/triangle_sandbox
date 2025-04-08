@@ -368,27 +368,26 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
   return true;
 }
 
-bool Model::Draw(SDL_GPUCommandBuffer* command_buffer,
-                 SDL_GPURenderPass* pass) {
+bool Model::Draw(const DrawContext& context) {
   if (!IsValid()) {
     return false;
   }
 
-  SDL_PushGPUDebugGroup(command_buffer, "Model");
-  FML_DEFER(SDL_PopGPUDebugGroup(command_buffer));
+  SDL_PushGPUDebugGroup(context.command_buffer, "Model");
+  FML_DEFER(SDL_PopGPUDebugGroup(context.command_buffer));
 
   if (index_count_ == 0) {
     return true;
   }
 
-  SDL_BindGPUGraphicsPipeline(pass, pipeline_.get().value);
+  SDL_BindGPUGraphicsPipeline(context.pass, pipeline_.get().value);
 
   {
     const auto binding = SDL_GPUBufferBinding{
         .buffer = vertex_buffer_.get().value,
         .offset = 0u,
     };
-    SDL_BindGPUVertexBuffers(pass, 0, &binding, 1);
+    SDL_BindGPUVertexBuffers(context.pass, 0, &binding, 1);
   }
 
   {
@@ -396,12 +395,16 @@ bool Model::Draw(SDL_GPUCommandBuffer* command_buffer,
         .buffer = index_buffer_.get().value,
         .offset = 0u,
     };
-    SDL_BindGPUIndexBuffer(pass, &binding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+    SDL_BindGPUIndexBuffer(context.pass, &binding,
+                           SDL_GPU_INDEXELEMENTSIZE_32BIT);
   }
 
   {
-    glm::mat4 proj =
-        glm::perspectiveLH_ZO(glm::radians(60.0), 800.0 / 600.0, 0.1, 100.0);
+    glm::mat4 proj = glm::perspectiveLH_ZO(glm::radians(60.0),        //
+                                           context.GetAspectRatio(),  //
+                                           0.1,                       //
+                                           100.0                      //
+    );
     glm::mat4 view = glm::lookAtLH(glm::vec3{0.0, 0.0, -5.0},  // eye
                                    glm::vec3{0},               // center
                                    glm::vec3{0.0, 1.0, 0.0}    // up
@@ -410,7 +413,7 @@ bool Model::Draw(SDL_GPUCommandBuffer* command_buffer,
     // model = glm::scale(model, glm::vec3{2.0, 2.0, 1.0});
     // model = glm::rotate(model, glm::radians(45.0f), {0.0, 1.0, 0.0});
     auto mvp = proj * view * model;
-    SDL_PushGPUVertexUniformData(command_buffer, 0, &mvp, sizeof(mvp));
+    SDL_PushGPUVertexUniformData(context.command_buffer, 0, &mvp, sizeof(mvp));
   }
 
   {
@@ -418,11 +421,11 @@ bool Model::Draw(SDL_GPUCommandBuffer* command_buffer,
         .texture = textures_.at(0).texture.get().value,
         .sampler = samplers_.at(0).get().value,
     };
-    SDL_BindGPUFragmentSamplers(pass, 0u, &binding, 1u);
+    SDL_BindGPUFragmentSamplers(context.pass, 0u, &binding, 1u);
   }
 
   for (const auto& draw : draws_) {
-    SDL_DrawGPUIndexedPrimitives(pass,                                //
+    SDL_DrawGPUIndexedPrimitives(context.pass,                        //
                                  draw.last_index - draw.first_index,  //
                                  1u,                                  //
                                  draw.first_index,                    //

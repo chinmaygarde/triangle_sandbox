@@ -28,12 +28,11 @@ class ModelRenderer final : public Drawable {
     is_valid_ = true;
   }
 
-  bool Draw(SDL_GPUCommandBuffer* command_buffer,
-            SDL_GPURenderPass* pass) override {
+  bool Draw(const DrawContext& context) override {
     if (!model_) {
       return false;
     }
-    return model_->Draw(command_buffer, pass);
+    return model_->Draw(context);
   }
 
  private:
