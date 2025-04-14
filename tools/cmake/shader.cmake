@@ -21,21 +21,6 @@ function(add_shader TARGET SHADER_FILE)
             ${CMAKE_CURRENT_SOURCE_DIR}/shaders/${SHADER_FILE}
   )
 
-  add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.h
-           ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.cc
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.metal
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../tools/xxd.py
-              --symbol-name=${SHADER_NAME}
-              --output-header=${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.h
-              --output-source=${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.cc
-              --source=${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.metal
-  )
-
-  target_sources(${TARGET}
-    PRIVATE
-      ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.h
-      ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.cc
-  )
+  xxd(${TARGET} ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_FILE}.metal)
 
 endfunction()
