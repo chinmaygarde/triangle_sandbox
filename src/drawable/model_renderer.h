@@ -10,14 +10,14 @@ namespace ts {
 
 class ModelRenderer final : public Drawable {
  public:
-  ModelRenderer(const UniqueGPUDevice& device, const std::string& model_name) {
+  ModelRenderer(const Context& ctx, const std::string& model_name) {
     auto model_data = fml::FileMapping::CreateReadOnly(fml::paths::JoinPaths(
         {MODELS_LOCATION, model_name, "glTF-Binary", model_name + ".glb"}));
     if (!model_data) {
       FML_LOG(ERROR) << "Could not load model data.";
       return;
     }
-    auto model = std::make_unique<Model>(device, *model_data);
+    auto model = std::make_unique<Model>(ctx, *model_data);
 
     if (!model->IsValid()) {
       FML_LOG(ERROR) << "Could not load model.";

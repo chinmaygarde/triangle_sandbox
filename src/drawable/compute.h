@@ -4,6 +4,7 @@
 #include <fml/mapping.h>
 #include "buffer.h"
 #include "compute.slang.h"
+#include "context.h"
 #include "drawable.h"
 #include "macros.h"
 #include "pipeline.h"
@@ -18,21 +19,20 @@ class Compute final : public Drawable {
     glm::vec4 position;
     glm::vec2 uv;
   };
-  static UniqueGPUGraphicsPipeline CreateRenderPipeline(
-      const UniqueGPUDevice& device) {
+  static UniqueGPUGraphicsPipeline CreateRenderPipeline(const Context& ctx) {
     auto code = fml::NonOwnedMapping{xxd_sampling_data, xxd_sampling_length};
     auto vs = ShaderBuilder{}
                   .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                   .SetEntrypoint("SamplingVertexMain")
                   .SetStage(SDL_GPU_SHADERSTAGE_VERTEX)
-                  .Build(device);
+                  .Build(ctx.GetDevice());
 
     auto fs = ShaderBuilder{}
                   .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                   .SetEntrypoint("SamplingFragmentMain")
                   .SetStage(SDL_GPU_SHADERSTAGE_FRAGMENT)
                   .SetResourceCounts(1, 0, 0, 0)
-                  .Build(device);
+                  .Build(ctx.GetDevice());
 
     return GraphicsPipelineBuilder{}
         .SetVertexShader(&vs)
@@ -61,34 +61,34 @@ class Compute final : public Drawable {
         })
         .SetColorTargets({
             SDL_GPUColorTargetDescription{
-                .format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
+                .format = ctx.GetColorFormat(),
             },
         })
         .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP)
         .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
         .SetDepthStencilFormat(SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT)
-        .Build(device);
+        .Build(ctx.GetDevice());
   }
 
-  Compute(const UniqueGPUDevice& device) {
+  Compute(const Context& ctx) {
     auto code = fml::NonOwnedMapping{xxd_compute_data, xxd_compute_length};
     compute_pipeline_ = ComputePipelineBuilder{}
                             .SetDimensions({32, 32, 1})
                             .SetShader(&code, SDL_GPU_SHADERFORMAT_MSL)
                             .SetEntrypoint("ComputeAdder")
                             .SetResourceCounts(0, 0, 0, 1, 0, 0)
-                            .Build(device);
+                            .Build(ctx.GetDevice());
     if (!compute_pipeline_.IsValid()) {
       return;
     }
 
-    render_pipeline_ = CreateRenderPipeline(device);
+    render_pipeline_ = CreateRenderPipeline(ctx);
     if (!render_pipeline_.is_valid()) {
       return;
     }
 
     render_vtx_buffer_ =
-        PerformHostToDeviceTransfer(device,
+        PerformHostToDeviceTransfer(ctx.GetDevice(),
                                     std::vector<Vertex>{
                                         // 0
                                         Vertex{
@@ -117,7 +117,7 @@ class Compute final : public Drawable {
     }
 
     render_sampler_ = CreateSampler(
-        device.get(),
+        ctx.GetDevice().get(),
         SDL_GPUSamplerCreateInfo{
             .address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
             .address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
@@ -129,11 +129,11 @@ class Compute final : public Drawable {
       return;
     }
 
-    rw_texture_ =
-        CreateGPUTexture(device.get(), {1200, 800, 1}, SDL_GPU_TEXTURETYPE_2D,
-                         SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-                         SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE |
-                             SDL_GPU_TEXTUREUSAGE_SAMPLER);
+    rw_texture_ = CreateGPUTexture(ctx.GetDevice().get(), {1200, 800, 1},
+                                   SDL_GPU_TEXTURETYPE_2D,
+                                   SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
+                                   SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE |
+                                       SDL_GPU_TEXTUREUSAGE_SAMPLER);
     if (!rw_texture_.IsValid()) {
       return;
     }

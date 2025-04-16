@@ -1,5 +1,6 @@
 #pragma once
 
+#include "context.h"
 #include "drawable.h"
 #include "sdl_types.h"
 
@@ -7,7 +8,7 @@ namespace ts {
 
 class Triangle final : public Drawable {
  public:
-  Triangle(const UniqueGPUDevice& device);
+  Triangle(const Context& ctx);
 
   bool Draw(const DrawContext& context) override;
 

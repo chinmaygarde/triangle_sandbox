@@ -4,6 +4,7 @@
 #include <fml/mapping.h>
 #include <unordered_map>
 #include "buffer.h"
+#include "context.h"
 #include "drawable.h"
 #include "sdl_types.h"
 
@@ -11,7 +12,7 @@ namespace ts {
 
 class Model final : public Drawable {
  public:
-  Model(const UniqueGPUDevice& device, const fml::Mapping& mapping);
+  Model(const Context& ctx, const fml::Mapping& mapping);
 
   ~Model();
 
@@ -34,7 +35,7 @@ class Model final : public Drawable {
   std::vector<DrawCall> draws_;
   bool is_valid_ = false;
 
-  bool BuildPipeline(const UniqueGPUDevice& device);
+  bool BuildPipeline(const Context& ctx);
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Model);
 };

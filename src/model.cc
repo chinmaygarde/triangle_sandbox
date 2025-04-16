@@ -154,8 +154,8 @@ bool ReadVertexAttribute(std::vector<Vertex>& vertices,
   return true;
 }
 
-Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
-  if (!BuildPipeline(device)) {
+Model::Model(const Context& ctx, const fml::Mapping& mapping) {
+  if (!BuildPipeline(ctx)) {
     return;
   }
 
@@ -239,13 +239,15 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
     }
   }
 
-  index_buffer_ = PerformHostToDeviceTransfer(device,                    //
+  index_buffer_ = PerformHostToDeviceTransfer(ctx.GetDevice(),           //
                                               indices,                   //
                                               SDL_GPU_BUFFERUSAGE_INDEX  //
   );
   index_count_ = indices.size();
-  vertex_buffer_ =
-      PerformHostToDeviceTransfer(device, vertices, SDL_GPU_BUFFERUSAGE_VERTEX);
+  vertex_buffer_ = PerformHostToDeviceTransfer(ctx.GetDevice(),            //
+                                               vertices,                   //
+                                               SDL_GPU_BUFFERUSAGE_VERTEX  //
+  );
 
   // Handle images.
   for (size_t i = 0, count = model->images.size(); i < count; i++) {
@@ -262,7 +264,7 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
       continue;
     }
     auto texture =
-        PerformHostToDeviceTransferTexture2D(device.get(),                 //
+        PerformHostToDeviceTransferTexture2D(ctx.GetDevice().get(),        //
                                              format.value(),               //
                                              {image.width, image.height},  //
                                              image.image.data(),           //
@@ -275,7 +277,7 @@ Model::Model(const UniqueGPUDevice& device, const fml::Mapping& mapping) {
   for (size_t i = 0, count = model->samplers.size(); i < count; i++) {
     const auto& sampler = model->samplers[i];
     samplers_[i] = CreateSampler(
-        device.get(),
+        ctx.GetDevice().get(),
         SDL_GPUSamplerCreateInfo{
             .address_mode_u = AddressModeTinyGLTFToSDLGPU(sampler.wrapS),
             .address_mode_v = AddressModeTinyGLTFToSDLGPU(sampler.wrapT),
@@ -298,7 +300,7 @@ bool Model::IsValid() const {
   return is_valid_;
 }
 
-bool Model::BuildPipeline(const UniqueGPUDevice& device) {
+bool Model::BuildPipeline(const Context& ctx) {
   auto code = fml::NonOwnedMapping{xxd_model_data, xxd_model_length};
 
   auto vs = ShaderBuilder{}
@@ -306,19 +308,19 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
                 .SetStage(SDL_GPU_SHADERSTAGE_VERTEX)
                 .SetEntrypoint("VertexMain")
                 .SetResourceCounts(0, 0, 0, 1u)
-                .Build(device);
+                .Build(ctx.GetDevice());
   auto fs = ShaderBuilder{}
                 .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                 .SetStage(SDL_GPU_SHADERSTAGE_FRAGMENT)
                 .SetEntrypoint("FragmentMain")
                 .SetResourceCounts(1u, 0, 0, 0)
-                .Build(device);
+                .Build(ctx.GetDevice());
 
   pipeline_ =
       GraphicsPipelineBuilder{}
           .SetColorTargets({
               SDL_GPUColorTargetDescription{
-                  .format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
+                  .format = ctx.GetColorFormat(),
               },
           })
           .SetVertexShader(&vs)
@@ -361,7 +363,7 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
               .enable_depth_test = true,
               .enable_depth_write = true,
           })
-          .Build(device);
+          .Build(ctx.GetDevice());
   if (!pipeline_.is_valid()) {
     return false;
   }

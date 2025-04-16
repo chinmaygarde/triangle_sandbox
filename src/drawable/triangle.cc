@@ -9,19 +9,19 @@
 
 namespace ts {
 
-Triangle::Triangle(const UniqueGPUDevice& device) {
+Triangle::Triangle(const Context& ctx) {
   auto code = fml::NonOwnedMapping(xxd_triangle_data, xxd_triangle_length);
 
   auto vs = ShaderBuilder{}
                 .SetStage(SDL_GPU_SHADERSTAGE_VERTEX)
                 .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                 .SetEntrypoint("VertexMain")
-                .Build(device);
+                .Build(ctx.GetDevice());
   auto fs = ShaderBuilder{}
                 .SetStage(SDL_GPU_SHADERSTAGE_FRAGMENT)
                 .SetCode(&code, SDL_GPU_SHADERFORMAT_MSL)
                 .SetEntrypoint("FragmentMain")
-                .Build(device);
+                .Build(ctx.GetDevice());
   struct Vertex {
     glm::vec4 position = {};
     glm::vec4 color = {};
@@ -51,13 +51,13 @@ Triangle::Triangle(const UniqueGPUDevice& device) {
               .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
           }})
           .SetColorTargets({SDL_GPUColorTargetDescription{
-              .format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
+              .format = ctx.GetColorFormat(),
               .blend_state = {},
           }})
           .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP)
           .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
           .SetDepthStencilFormat(SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT)
-          .Build(device);
+          .Build(ctx.GetDevice());
   if (!pipeline.is_valid()) {
     return;
   }
@@ -76,8 +76,8 @@ Triangle::Triangle(const UniqueGPUDevice& device) {
           .position = glm::vec4{-0.5, -0.5, 0.0, 1.0},
       },
   };
-  auto vtx_buffer =
-      PerformHostToDeviceTransfer(device, vertices, SDL_GPU_BUFFERUSAGE_VERTEX);
+  auto vtx_buffer = PerformHostToDeviceTransfer(ctx.GetDevice(), vertices,
+                                                SDL_GPU_BUFFERUSAGE_VERTEX);
   if (!vtx_buffer.is_valid()) {
     return;
   }
