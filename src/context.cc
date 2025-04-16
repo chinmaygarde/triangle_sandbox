@@ -16,6 +16,7 @@ Context::Context(UniqueSDLWindow window) : window_(std::move(window)) {
   color_format_ =
       SDL_GetGPUSwapchainTextureFormat(device_.get(), window_.get());
   depth_format_ = SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT;
+  color_samples_ = SDL_GPU_SAMPLECOUNT_4;
 }
 
 const UniqueSDLWindow& Context::GetWindow() const {
@@ -32,6 +33,10 @@ SDL_GPUTextureFormat Context::GetColorFormat() const {
 
 SDL_GPUTextureFormat Context::GetDepthFormat() const {
   return depth_format_;
+}
+
+SDL_GPUSampleCount Context::GetColorSamples() const {
+  return color_samples_;
 }
 
 }  // namespace ts

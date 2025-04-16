@@ -17,11 +17,14 @@ class Context {
 
   SDL_GPUTextureFormat GetDepthFormat() const;
 
+  SDL_GPUSampleCount GetColorSamples() const;
+
  private:
   UniqueSDLWindow window_;
   UniqueGPUDevice device_;
   SDL_GPUTextureFormat color_format_ = SDL_GPU_TEXTUREFORMAT_INVALID;
   SDL_GPUTextureFormat depth_format_ = SDL_GPU_TEXTUREFORMAT_INVALID;
+  SDL_GPUSampleCount color_samples_ = SDL_GPU_SAMPLECOUNT_1;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Context);
 };

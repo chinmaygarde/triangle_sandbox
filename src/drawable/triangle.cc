@@ -52,10 +52,9 @@ Triangle::Triangle(const Context& ctx) {
           }})
           .SetColorTargets({SDL_GPUColorTargetDescription{
               .format = ctx.GetColorFormat(),
-              .blend_state = {},
           }})
           .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP)
-          .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
+          .SetSampleCount(ctx.GetColorSamples())
           .SetDepthStencilFormat(ctx.GetDepthFormat())
           .Build(ctx.GetDevice());
   if (!pipeline.is_valid()) {

@@ -116,7 +116,7 @@ SDL_GPUTexture* Renderer::RenderOnce() {
                                         texture_format,                       //
                                         SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,    //
                                         1u,                                   //
-                                        SDL_GPU_SAMPLECOUNT_4                 //
+                                        context_->GetColorSamples()           //
   );
 
   auto depth_texture =
@@ -126,7 +126,7 @@ SDL_GPUTexture* Renderer::RenderOnce() {
                        context_->GetDepthFormat(),                 //
                        SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET,  //
                        1u,                                         //
-                       SDL_GPU_SAMPLECOUNT_4                       //
+                       context_->GetColorSamples()                 //
       );
 
   if (!color_texture.IsValid() || !depth_texture.IsValid()) {

@@ -354,7 +354,7 @@ bool Model::BuildPipeline(const Context& ctx) {
                           .pitch = sizeof(Vertex),
                       },
                   })
-                  .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
+                  .SetSampleCount(ctx.GetColorSamples())
                   .SetCullMode(SDL_GPU_CULLMODE_BACK)
                   .SetDepthStencilFormat(ctx.GetDepthFormat())
                   .SetDepthStencilState(SDL_GPUDepthStencilState{

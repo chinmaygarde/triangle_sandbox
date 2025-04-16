@@ -65,7 +65,7 @@ class Compute final : public Drawable {
             },
         })
         .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP)
-        .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
+        .SetSampleCount(ctx.GetColorSamples())
         .SetDepthStencilFormat(ctx.GetDepthFormat())
         .Build(ctx.GetDevice());
   }
