@@ -33,6 +33,12 @@ target_include_directories(triangle_sandbox
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+target_compile_definitions(triangle_sandbox
+  PUBLIC
+    -DGLM_FORCE_LEFT_HANDED=1
+    -DGLM_FORCE_DEPTH_ZERO_TO_ONE=1
+)
+
 get_filename_component(MODELS_DIRECTORY ../third_party/gltf_sample_assets/Models ABSOLUTE)
 set(MODELS_LOCATION ${MODELS_DIRECTORY})
 configure_file(models_location.h.in models_location.h @ONLY)

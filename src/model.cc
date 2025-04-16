@@ -357,7 +357,7 @@ bool Model::BuildPipeline(const UniqueGPUDevice& device) {
           .SetCullMode(SDL_GPU_CULLMODE_BACK)
           .SetDepthStencilFormat(SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT)
           .SetDepthStencilState(SDL_GPUDepthStencilState{
-              .compare_op = SDL_GPU_COMPAREOP_LESS_OR_EQUAL,
+              .compare_op = SDL_GPU_COMPAREOP_GREATER,
               .enable_depth_test = true,
               .enable_depth_write = true,
           })
@@ -400,17 +400,17 @@ bool Model::Draw(const DrawContext& context) {
   }
 
   {
-    glm::mat4 proj = glm::perspectiveLH_ZO(glm::radians(60.0),        //
-                                           context.GetAspectRatio(),  //
-                                           0.1,                       //
-                                           100.0                      //
+    glm::mat4 proj = glm::perspective(glm::radians(60.0),        //
+                                      context.GetAspectRatio(),  //
+                                      0.1,                       //
+                                      1000.0                     //
     );
-    glm::mat4 view = glm::lookAtLH(glm::vec3{0.0, 0.0, -5.0},  // eye
-                                   glm::vec3{0},               // center
-                                   glm::vec3{0.0, 1.0, 0.0}    // up
+    glm::mat4 view = glm::lookAt(glm::vec3{0.0, 0, -5.0},  // eye
+                                 glm::vec3{0},             // center
+                                 glm::vec3{0.0, 1.0, 0.0}  // up
     );
     glm::mat4 model = glm::mat4{1.0};
-    // model = glm::scale(model, glm::vec3{2.0, 2.0, 1.0});
+    // model = glm::scale(model, glm::vec3{2.0, 2.0, 2.0});
     // model = glm::rotate(model, glm::radians(45.0f), {0.0, 1.0, 0.0});
     auto mvp = proj * view * model;
     SDL_PushGPUVertexUniformData(context.command_buffer, 0, &mvp, sizeof(mvp));

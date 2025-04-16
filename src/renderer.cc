@@ -77,7 +77,7 @@ bool Renderer::Render() {
 
   const auto depth_stencil_info = SDL_GPUDepthStencilTargetInfo{
       .texture = depth_texture.texture.get().value,
-      .clear_depth = 1.0f,
+      .clear_depth = 0.0f,
       .load_op = SDL_GPU_LOADOP_CLEAR,
       .store_op = SDL_GPU_STOREOP_DONT_CARE,
       .stencil_load_op = SDL_GPU_LOADOP_CLEAR,
