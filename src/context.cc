@@ -12,6 +12,9 @@ Context::Context(UniqueSDLWindow window) : window_(std::move(window)) {
       << "Could not create GPU device: " << SDL_GetError();
   auto claimed = SDL_ClaimWindowForGPUDevice(device_.get(), window_.get());
   FML_CHECK(claimed) << "Could not claim device: " << SDL_GetError();
+
+  color_format_ =
+      SDL_GetGPUSwapchainTextureFormat(device_.get(), window_.get());
 }
 
 const UniqueSDLWindow& Context::GetWindow() const {
@@ -20,6 +23,10 @@ const UniqueSDLWindow& Context::GetWindow() const {
 
 const UniqueGPUDevice& Context::GetDevice() const {
   return device_;
+}
+
+SDL_GPUTextureFormat Context::GetColorFormat() const {
+  return color_format_;
 }
 
 }  // namespace ts

@@ -24,12 +24,23 @@ add_executable(triangle_sandbox
   sdl_types.h
   shader.cc
   shader.h
+  ../third_party/imgui/backends/imgui_impl_sdl3.cpp
+  ../third_party/imgui/backends/imgui_impl_sdl3.h
+  ../third_party/imgui/backends/imgui_impl_sdlgpu3.cpp
+  ../third_party/imgui/backends/imgui_impl_sdlgpu3.h
+  ../third_party/imgui/imgui.cpp
+  ../third_party/imgui/imgui.h
+  ../third_party/imgui/imgui_draw.cpp
+  ../third_party/imgui/imgui_tables.cpp
+  ../third_party/imgui/imgui_widgets.cpp
+  ../third_party/imgui/imgui_demo.cpp
 )
 
 target_include_directories(triangle_sandbox
   PUBLIC
     .
     ../third_party/hedley
+    ../third_party/imgui
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
