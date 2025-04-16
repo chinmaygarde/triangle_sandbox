@@ -123,7 +123,7 @@ SDL_GPUTexture* Renderer::RenderOnce() {
       CreateGPUTexture(device.get(),                               //
                        {texture_width, texture_height, 1u},        //
                        SDL_GPU_TEXTURETYPE_2D,                     //
-                       SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT,    //
+                       context_->GetDepthFormat(),                 //
                        SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET,  //
                        1u,                                         //
                        SDL_GPU_SAMPLECOUNT_4                       //

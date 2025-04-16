@@ -15,10 +15,13 @@ class Context {
 
   SDL_GPUTextureFormat GetColorFormat() const;
 
+  SDL_GPUTextureFormat GetDepthFormat() const;
+
  private:
   UniqueSDLWindow window_;
   UniqueGPUDevice device_;
   SDL_GPUTextureFormat color_format_ = SDL_GPU_TEXTUREFORMAT_INVALID;
+  SDL_GPUTextureFormat depth_format_ = SDL_GPU_TEXTUREFORMAT_INVALID;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Context);
 };

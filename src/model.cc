@@ -316,54 +316,53 @@ bool Model::BuildPipeline(const Context& ctx) {
                 .SetResourceCounts(1u, 0, 0, 0)
                 .Build(ctx.GetDevice());
 
-  pipeline_ =
-      GraphicsPipelineBuilder{}
-          .SetColorTargets({
-              SDL_GPUColorTargetDescription{
-                  .format = ctx.GetColorFormat(),
-              },
-          })
-          .SetVertexShader(&vs)
-          .SetFragmentShader(&fs)
-          .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLELIST)
-          .SetVertexAttribs({
-              // Position
-              SDL_GPUVertexAttribute{
-                  .buffer_slot = 0,
-                  .location = 0,
-                  .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-                  .offset = offsetof(Vertex, position),
-              },
-              // Normal
-              SDL_GPUVertexAttribute{
-                  .buffer_slot = 0,
-                  .location = 1,
-                  .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-                  .offset = offsetof(Vertex, normal),
-              },
-              // Texture Coords
-              SDL_GPUVertexAttribute{
-                  .buffer_slot = 0,
-                  .location = 2,
-                  .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
-                  .offset = offsetof(Vertex, textureCoords),
-              },
-          })
-          .SetVertexBuffers({
-              SDL_GPUVertexBufferDescription{
-                  .slot = 0u,
-                  .pitch = sizeof(Vertex),
-              },
-          })
-          .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
-          .SetCullMode(SDL_GPU_CULLMODE_BACK)
-          .SetDepthStencilFormat(SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT)
-          .SetDepthStencilState(SDL_GPUDepthStencilState{
-              .compare_op = SDL_GPU_COMPAREOP_GREATER,
-              .enable_depth_test = true,
-              .enable_depth_write = true,
-          })
-          .Build(ctx.GetDevice());
+  pipeline_ = GraphicsPipelineBuilder{}
+                  .SetColorTargets({
+                      SDL_GPUColorTargetDescription{
+                          .format = ctx.GetColorFormat(),
+                      },
+                  })
+                  .SetVertexShader(&vs)
+                  .SetFragmentShader(&fs)
+                  .SetPrimitiveType(SDL_GPU_PRIMITIVETYPE_TRIANGLELIST)
+                  .SetVertexAttribs({
+                      // Position
+                      SDL_GPUVertexAttribute{
+                          .buffer_slot = 0,
+                          .location = 0,
+                          .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
+                          .offset = offsetof(Vertex, position),
+                      },
+                      // Normal
+                      SDL_GPUVertexAttribute{
+                          .buffer_slot = 0,
+                          .location = 1,
+                          .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
+                          .offset = offsetof(Vertex, normal),
+                      },
+                      // Texture Coords
+                      SDL_GPUVertexAttribute{
+                          .buffer_slot = 0,
+                          .location = 2,
+                          .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
+                          .offset = offsetof(Vertex, textureCoords),
+                      },
+                  })
+                  .SetVertexBuffers({
+                      SDL_GPUVertexBufferDescription{
+                          .slot = 0u,
+                          .pitch = sizeof(Vertex),
+                      },
+                  })
+                  .SetSampleCount(SDL_GPU_SAMPLECOUNT_4)
+                  .SetCullMode(SDL_GPU_CULLMODE_BACK)
+                  .SetDepthStencilFormat(ctx.GetDepthFormat())
+                  .SetDepthStencilState(SDL_GPUDepthStencilState{
+                      .compare_op = SDL_GPU_COMPAREOP_GREATER,
+                      .enable_depth_test = true,
+                      .enable_depth_write = true,
+                  })
+                  .Build(ctx.GetDevice());
   if (!pipeline_.is_valid()) {
     return false;
   }
