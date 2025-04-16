@@ -2,8 +2,8 @@
 
 #include <glm/glm.hpp>
 #include "buffer.h"
+#include "graphics_pipeline.h"
 #include "macros.h"
-#include "pipeline.h"
 #include "shader.h"
 #include "triangle.slang.h"
 

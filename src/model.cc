@@ -6,10 +6,10 @@
 #include <glm/ext/matrix_transform.hpp>
 
 #include "buffer.h"
+#include "graphics_pipeline.h"
 #include "imgui.h"
 #include "macros.h"
 #include "model.slang.h"
-#include "pipeline.h"
 #include "shader.h"
 
 namespace ts {

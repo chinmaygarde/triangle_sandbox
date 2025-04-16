@@ -2,6 +2,8 @@
 add_executable(triangle_sandbox
   buffer.cc
   buffer.h
+  compute_pipeline.cc
+  compute_pipeline.h
   context.cc
   context.h
   drawable.cc
@@ -12,12 +14,12 @@ add_executable(triangle_sandbox
   drawable/model_renderer.h
   drawable/triangle.cc
   drawable/triangle.h
+  graphics_pipeline.cc
+  graphics_pipeline.h
   macros.h
   main.cc
   model.cc
   model.h
-  pipeline.cc
-  pipeline.h
   renderer.cc
   renderer.h
   sdl_types.cc

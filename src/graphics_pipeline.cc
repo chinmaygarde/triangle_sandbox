@@ -1,44 +1,10 @@
-#include "pipeline.h"
+#include "graphics_pipeline.h"
 
 namespace ts {
 
 GraphicsPipelineBuilder::GraphicsPipelineBuilder() {}
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetPrimitiveType(
-    SDL_GPUPrimitiveType type) {
-  primitive_type_ = type;
-  return *this;
-}
-
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexShader(
-    UniqueGPUShader* vertex_shader) {
-  vertex_shader_ = vertex_shader;
-  return *this;
-}
-
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetFragmentShader(
-    UniqueGPUShader* fragment_shader) {
-  fragment_shader_ = fragment_shader;
-  return *this;
-}
-
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexBuffers(
-    std::vector<SDL_GPUVertexBufferDescription> vertex_buffers) {
-  vertex_buffers_ = std::move(vertex_buffers);
-  return *this;
-}
-
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexAttribs(
-    std::vector<SDL_GPUVertexAttribute> vertex_attribs) {
-  vertex_attribs_ = std::move(vertex_attribs);
-  return *this;
-}
-
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetColorTargets(
-    std::vector<SDL_GPUColorTargetDescription> color_targets) {
-  color_targets_ = std::move(color_targets);
-  return *this;
-}
+GraphicsPipelineBuilder::~GraphicsPipelineBuilder() {}
 
 UniqueGPUGraphicsPipeline GraphicsPipelineBuilder::Build(
     const UniqueGPUDevice& device) const {
@@ -76,9 +42,63 @@ UniqueGPUGraphicsPipeline GraphicsPipelineBuilder::Build(
   return UniqueGPUGraphicsPipeline{res};
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetPrimitiveType(
+    SDL_GPUPrimitiveType type) {
+  primitive_type_ = type;
+  return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexShader(
+    UniqueGPUShader* vertex_shader) {
+  vertex_shader_ = vertex_shader;
+  return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetFragmentShader(
+    UniqueGPUShader* fragment_shader) {
+  fragment_shader_ = fragment_shader;
+  return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexBuffers(
+    std::vector<SDL_GPUVertexBufferDescription> vertex_buffers) {
+  vertex_buffers_ = std::move(vertex_buffers);
+  return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexAttribs(
+    std::vector<SDL_GPUVertexAttribute> vertex_attribs) {
+  vertex_attribs_ = std::move(vertex_attribs);
+  return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetColorTargets(
+    std::vector<SDL_GPUColorTargetDescription> color_targets) {
+  color_targets_ = std::move(color_targets);
+  return *this;
+}
+
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetSampleCount(
     SDL_GPUSampleCount sample_count) {
   sample_count_ = sample_count;
+  return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetDepthStencilFormat(
+    SDL_GPUTextureFormat depth_stencil_format) {
+  depth_stencil_format_ = depth_stencil_format;
+  return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetDepthStencilState(
+    SDL_GPUDepthStencilState depth_stencil) {
+  depth_stencil_ = depth_stencil;
+  return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetCullMode(
+    SDL_GPUCullMode cull_mode) {
+  cull_mode_ = cull_mode;
   return *this;
 }
 

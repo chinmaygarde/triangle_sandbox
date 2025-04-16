@@ -10,30 +10,11 @@ namespace ts {
 
 class ModelRenderer final : public Drawable {
  public:
-  ModelRenderer(const Context& ctx, const std::string& model_name) {
-    auto model_data = fml::FileMapping::CreateReadOnly(fml::paths::JoinPaths(
-        {MODELS_LOCATION, model_name, "glTF-Binary", model_name + ".glb"}));
-    if (!model_data) {
-      FML_LOG(ERROR) << "Could not load model data.";
-      return;
-    }
-    auto model = std::make_unique<Model>(ctx, *model_data);
+  ModelRenderer(const Context& ctx, const std::string& model_name);
 
-    if (!model->IsValid()) {
-      FML_LOG(ERROR) << "Could not load model.";
-      return;
-    }
+  ~ModelRenderer();
 
-    model_ = std::move(model);
-    is_valid_ = true;
-  }
-
-  bool Draw(const DrawContext& context) override {
-    if (!model_) {
-      return false;
-    }
-    return model_->Draw(context);
-  }
+  bool Draw(const DrawContext& context) override;
 
  private:
   std::unique_ptr<Model> model_;
