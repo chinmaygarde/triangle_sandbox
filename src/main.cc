@@ -3,6 +3,7 @@
 #include <SDL3/SDL_main.h>
 #include <fml/logging.h>
 #include <hedley.h>
+#include "backends/imgui_impl_sdl3.h"
 #include "renderer.h"
 
 namespace ts {
@@ -26,6 +27,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     return SDL_APP_FAILURE;
   }
 
+  SDL_SetWindowResizable(window.get(), true);
+
   renderer_ =
       std::make_unique<Renderer>(std::make_unique<Context>(std::move(window)));
   return SDL_APP_CONTINUE;
@@ -36,6 +39,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
   if (event->type == SDL_EVENT_QUIT) {
     return SDL_APP_SUCCESS;
   }
+  ImGui_ImplSDL3_ProcessEvent(event);
   return SDL_APP_CONTINUE;
 }
 

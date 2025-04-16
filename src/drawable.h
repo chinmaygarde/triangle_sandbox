@@ -11,7 +11,7 @@ struct DrawContext {
   SDL_GPUCommandBuffer* command_buffer = nullptr;
   SDL_GPURenderPass* pass = nullptr;
 
-  double GetAspectRatio() const {
+  float GetAspectRatio() const {
     const auto vp = glm::max(glm::vec2{viewport}, glm::vec2{1.0});
     return vp.x / vp.y;
   }

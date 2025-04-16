@@ -22,6 +22,7 @@ Renderer::Renderer(std::shared_ptr<Context> context)
 
 Renderer::~Renderer() {
   ShutdownIMGUI();
+  SDL_WaitForGPUIdle(context_->GetDevice().get());
 }
 
 bool Renderer::Render() {
@@ -36,7 +37,6 @@ void Renderer::BeginIMGUIFrame() {
   ImGui_ImplSDLGPU3_NewFrame();
   ImGui_ImplSDL3_NewFrame();
   ImGui::NewFrame();
-  ImGui::ShowDemoWindow(NULL);
 }
 
 void Renderer::EndIMGUIFrame(SDL_GPUTexture* texture) {
@@ -45,6 +45,9 @@ void Renderer::EndIMGUIFrame(SDL_GPUTexture* texture) {
   auto command_buffer =
       SDL_AcquireGPUCommandBuffer(context_->GetDevice().get());
   FML_DEFER(SDL_SubmitGPUCommandBuffer(command_buffer));
+
+  SDL_PushGPUDebugGroup(command_buffer, "IMGUI");
+  FML_DEFER(SDL_PopGPUDebugGroup(command_buffer));
 
   auto draw_data = ImGui::GetDrawData();
   ImGui_ImplSDLGPU3_PrepareDrawData(draw_data, command_buffer);
@@ -70,7 +73,6 @@ void Renderer::StartupIMGUI() {
   ImGui_ImplSDLGPU3_InitInfo info = {
       .Device = context_->GetDevice().get(),
       .ColorTargetFormat = context_->GetColorFormat(),
-      .MSAASamples = SDL_GPU_SAMPLECOUNT_1,
   };
   FML_CHECK(ImGui_ImplSDL3_InitForSDLGPU(context_->GetWindow().get()));
   FML_CHECK(ImGui_ImplSDLGPU3_Init(&info));

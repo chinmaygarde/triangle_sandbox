@@ -9,6 +9,8 @@ class Context {
  public:
   Context(UniqueSDLWindow window);
 
+  ~Context();
+
   const UniqueSDLWindow& GetWindow() const;
 
   const UniqueGPUDevice& GetDevice() const;

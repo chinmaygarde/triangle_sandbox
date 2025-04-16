@@ -6,6 +6,7 @@
 #include <glm/ext/matrix_transform.hpp>
 
 #include "buffer.h"
+#include "imgui.h"
 #include "macros.h"
 #include "model.slang.h"
 #include "pipeline.h"
@@ -400,19 +401,26 @@ bool Model::Draw(const DrawContext& context) {
                            SDL_GPU_INDEXELEMENTSIZE_32BIT);
   }
 
+  static float fov = 60;
+  static glm::vec3 eye = glm::vec3{0.0, 0, -5.0};
   {
-    glm::mat4 proj = glm::perspective(glm::radians(60.0),        //
+    ImGui::Begin("Viewport");
+    ImGui::InputFloat("FOV", &fov);
+    ImGui::SliderFloat3("Eye", reinterpret_cast<float*>(&eye), -10, 10);
+    ImGui::End();
+  }
+
+  {
+    glm::mat4 proj = glm::perspective(glm::radians(fov),         //
                                       context.GetAspectRatio(),  //
-                                      0.1,                       //
-                                      1000.0                     //
+                                      0.1f,                      //
+                                      1000.0f                    //
     );
-    glm::mat4 view = glm::lookAt(glm::vec3{0.0, 0, -5.0},  // eye
+    glm::mat4 view = glm::lookAt(eye,                      // eye
                                  glm::vec3{0},             // center
                                  glm::vec3{0.0, 1.0, 0.0}  // up
     );
     glm::mat4 model = glm::mat4{1.0};
-    // model = glm::scale(model, glm::vec3{2.0, 2.0, 2.0});
-    // model = glm::rotate(model, glm::radians(45.0f), {0.0, 1.0, 0.0});
     auto mvp = proj * view * model;
     SDL_PushGPUVertexUniformData(context.command_buffer, 0, &mvp, sizeof(mvp));
   }

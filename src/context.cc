@@ -15,8 +15,12 @@ Context::Context(UniqueSDLWindow window) : window_(std::move(window)) {
 
   color_format_ =
       SDL_GetGPUSwapchainTextureFormat(device_.get(), window_.get());
-  depth_format_ = SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT;
+  depth_format_ = SDL_GPU_TEXTUREFORMAT_D32_FLOAT;
   color_samples_ = SDL_GPU_SAMPLECOUNT_4;
+}
+
+Context::~Context() {
+  SDL_ReleaseWindowFromGPUDevice(device_.get(), window_.get());
 }
 
 const UniqueSDLWindow& Context::GetWindow() const {
