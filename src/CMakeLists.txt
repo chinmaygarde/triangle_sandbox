@@ -14,12 +14,12 @@ add_executable(triangle_sandbox
   drawable/model_renderer.h
   drawable/triangle.cc
   drawable/triangle.h
+  drawable/model.cc
+  drawable/model.h
   graphics_pipeline.cc
   graphics_pipeline.h
   macros.h
   main.cc
-  model.cc
-  model.h
   renderer.cc
   renderer.h
   sdl_types.cc
