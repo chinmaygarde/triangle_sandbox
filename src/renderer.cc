@@ -14,8 +14,7 @@ Renderer::Renderer(std::shared_ptr<Context> context)
     : context_(std::move(context)) {
   drawables_.emplace_back(std::make_unique<Compute>(*context_));
   drawables_.emplace_back(std::make_unique<Triangle>(*context_));
-  drawables_.emplace_back(
-      std::make_unique<ModelRenderer>(*context_, "DamagedHelmet"));
+  drawables_.emplace_back(std::make_unique<ModelRenderer>(context_));
 
   StartupIMGUI();
 }

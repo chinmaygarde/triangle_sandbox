@@ -21,11 +21,17 @@ class Model final : public Drawable {
   bool Draw(const DrawContext& context) override;
 
  private:
+  struct TextureBinding {
+    size_t texture = {};
+    std::optional<size_t> sampler = {};
+  };
   struct DrawCall {
     Uint32 first_index = {};
     Uint32 last_index = {};
     Uint32 first_vertex = {};
+    std::optional<TextureBinding> base_color_texture;
   };
+  UniqueGPUSampler default_sampler_;
   UniqueGPUGraphicsPipeline pipeline_;
   UniqueGPUBuffer vertex_buffer_;
   UniqueGPUBuffer index_buffer_;
@@ -36,6 +42,8 @@ class Model final : public Drawable {
   bool is_valid_ = false;
 
   bool BuildPipeline(const Context& ctx);
+
+  SDL_GPUSampler* PickSampler(std::optional<size_t> index) const;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Model);
 };

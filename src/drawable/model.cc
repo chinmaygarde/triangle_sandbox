@@ -165,6 +165,58 @@ Model::Model(const Context& ctx, const fml::Mapping& mapping) {
     return;
   }
 
+  default_sampler_ = CreateSampler(
+      ctx.GetDevice().get(),
+      SDL_GPUSamplerCreateInfo{
+          .address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+          .address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+          .min_filter = SDL_GPU_FILTER_LINEAR,
+          .mag_filter = SDL_GPU_FILTER_LINEAR,
+          .mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR,
+      });
+  if (!default_sampler_.is_valid()) {
+    FML_LOG(ERROR) << "Could not create default sampler.";
+    return;
+  }
+
+  // Handle images.
+  for (size_t i = 0, count = model->images.size(); i < count; i++) {
+    const auto& image = model->images[i];
+    auto format = PickFormat(image.component, image.pixel_type, image.bits);
+    if (!format.has_value()) {
+      FML_LOG(ERROR) << "Could not find format for image.";
+      continue;
+    }
+    const auto data_size = SDL_CalculateGPUTextureFormatSize(
+        format.value(), image.width, image.height, 1u);
+    if (data_size > image.image.size()) {
+      FML_LOG(ERROR) << "Prevented OOB access for image data.";
+      continue;
+    }
+    auto texture =
+        PerformHostToDeviceTransferTexture2D(ctx.GetDevice().get(),        //
+                                             format.value(),               //
+                                             {image.width, image.height},  //
+                                             image.image.data(),           //
+                                             data_size                     //
+        );
+    textures_[i] = std::move(texture);
+  }
+
+  // Handle samplers.
+  for (size_t i = 0, count = model->samplers.size(); i < count; i++) {
+    const auto& sampler = model->samplers[i];
+    samplers_[i] = CreateSampler(
+        ctx.GetDevice().get(),
+        SDL_GPUSamplerCreateInfo{
+            .address_mode_u = AddressModeTinyGLTFToSDLGPU(sampler.wrapS),
+            .address_mode_v = AddressModeTinyGLTFToSDLGPU(sampler.wrapT),
+            .min_filter = FilterModeTinyGLTFToSDLGPU(sampler.minFilter),
+            .mag_filter = FilterModeTinyGLTFToSDLGPU(sampler.magFilter),
+            .mipmap_mode = MipmapModeGLTFToSDLGPU(sampler.minFilter),
+        });
+  }
+
   std::vector<uint32_t> indices;
   std::vector<Vertex> vertices;
 
@@ -233,6 +285,31 @@ Model::Model(const Context& ctx, const fml::Mapping& mapping) {
           }
         }
         current_draw.last_index = indices.size();
+      }
+
+      {
+        if (primitive.material >= 0) {
+          const auto& material = model->materials[primitive.material];
+          if (auto index = material.pbrMetallicRoughness.baseColorTexture.index;
+              index >= 0) {
+            const auto& texture = model->textures[index];
+            size_t texture_index =
+                glm::clamp<int>(texture.source, 0u, textures_.size());
+            size_t sampler_index =
+                glm::clamp<int>(texture.sampler, 0u, samplers_.size());
+            if (textures_.contains(texture_index)) {
+              current_draw.base_color_texture = TextureBinding{
+                  .texture = texture_index,
+
+              };
+              // The sampler is optional. A default will be picked if none is
+              // specified.
+              if (samplers_.contains(sampler_index)) {
+                current_draw.base_color_texture->sampler = sampler_index;
+              }
+            }
+          }
+        }
       }
 
       std::ranges::move(current_vertices, std::back_inserter(vertices));
@@ -405,7 +482,7 @@ bool Model::Draw(const DrawContext& context) {
   static glm::vec3 eye = glm::vec3{0.0, 0, -5.0};
   {
     ImGui::Begin("Viewport");
-    ImGui::InputFloat("FOV", &fov);
+    ImGui::SliderFloat("FOV", &fov, 10, 180);
     ImGui::SliderFloat3("Eye", reinterpret_cast<float*>(&eye), -10, 10);
     ImGui::End();
   }
@@ -425,15 +502,19 @@ bool Model::Draw(const DrawContext& context) {
     SDL_PushGPUVertexUniformData(context.command_buffer, 0, &mvp, sizeof(mvp));
   }
 
-  {
+  for (const auto& draw : draws_) {
+    if (!draw.base_color_texture.has_value()) {
+      FML_LOG(ERROR) << "No base color.";
+      continue;
+    }
+
     const auto binding = SDL_GPUTextureSamplerBinding{
-        .texture = textures_.at(0).texture.get().value,
-        .sampler = samplers_.at(0).get().value,
+        .texture =
+            textures_.at(draw.base_color_texture->texture).texture.get().value,
+        .sampler = PickSampler(draw.base_color_texture->sampler),
     };
     SDL_BindGPUFragmentSamplers(context.pass, 0u, &binding, 1u);
-  }
 
-  for (const auto& draw : draws_) {
     SDL_DrawGPUIndexedPrimitives(context.pass,                        //
                                  draw.last_index - draw.first_index,  //
                                  1u,                                  //
@@ -444,6 +525,13 @@ bool Model::Draw(const DrawContext& context) {
   }
 
   return true;
+}
+
+SDL_GPUSampler* Model::PickSampler(std::optional<size_t> index) const {
+  if (!index.has_value() || !samplers_.contains(index.value())) {
+    return default_sampler_.get().value;
+  }
+  return samplers_.at(index.value()).get().value;
 }
 
 }  // namespace ts
